@@ -15,6 +15,32 @@ const wss = new WebSocket.Server({ server });
 // roomId -> Set of ws clients
 const rooms = new Map();
 
+// ─── Health Check ────────────────────────────────────────────────────────────
+
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    service: "ChatZ Backend",
+  });
+});
+
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "ChatZ Backend",
+    version: "1.0.0",
+    endpoints: {
+      health: "/health",
+      auth: ["/api/register", "/api/login"],
+      rooms: ["/api/rooms/join", "/api/users/:userId/rooms"],
+      dms: ["/api/dms", "/api/users/:userId/dms"],
+      messages: "/api/rooms/:roomId/messages",
+      profiles: ["/api/users/:userId/profile", "/api/users/:userId/stats"],
+      websocket: "ws://...",
+    },
+  });
+});
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
