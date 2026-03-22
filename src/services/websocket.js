@@ -13,6 +13,7 @@ const getWsUrl = () => {
 const WS_URL = getWsUrl();
 
 let socket = null;
+let pendingJoin = null;
 let listeners = {
   history: [],
   newMessage: [],
@@ -34,6 +35,10 @@ export function connect() {
 
   socket.addEventListener('open', () => {
     console.log('[WS] Connected');
+    if (pendingJoin) {
+      socket.send(JSON.stringify({ action: 'join', roomId: pendingJoin.roomId, userId: pendingJoin.userId }));
+      pendingJoin = null;
+    }
     listeners.open.forEach(cb => cb());
   });
 
@@ -66,10 +71,23 @@ export function connect() {
  * Subscribe to a room (send join action)
  */
 export function joinRoom(roomId, userId) {
-  if (!socket || socket.readyState !== WebSocket.OPEN) {
-    console.error('[WS] Cannot join room — not connected.');
+  if (!socket) {
+    pendingJoin = { roomId, userId };
+    connect();
     return;
   }
+
+  if (socket.readyState === WebSocket.CONNECTING) {
+    pendingJoin = { roomId, userId };
+    return;
+  }
+
+  if (socket.readyState !== WebSocket.OPEN) {
+    pendingJoin = { roomId, userId };
+    connect();
+    return;
+  }
+  pendingJoin = null;
   socket.send(JSON.stringify({ action: 'join', roomId, userId }));
 }
 
@@ -121,6 +139,7 @@ export function disconnect() {
     socket.close();
     socket = null;
   }
+  pendingJoin = null;
   // Clear all listeners
   listeners = { history: [], newMessage: [], open: [], close: [], error: [] };
 }

@@ -170,6 +170,7 @@ export function showProfileModal(userId) {
       <div class="profile-header">
         <div class="profile-avatar-large" id="profile-avatar">?</div>
         <h2 class="profile-name" id="profile-name">Loading...</h2>
+        <span class="profile-id" id="profile-id">ID: —</span>
         <span class="profile-joined" id="profile-joined"></span>
       </div>
       <div class="profile-stats" id="profile-stats">
@@ -196,6 +197,7 @@ export function showProfileModal(userId) {
 async function loadProfile(overlay, userId) {
   const nameEl = overlay.querySelector('#profile-name');
   const avatarEl = overlay.querySelector('#profile-avatar');
+  const idEl = overlay.querySelector('#profile-id');
   const joinedEl = overlay.querySelector('#profile-joined');
   const msgEl = overlay.querySelector('#stat-messages');
   const groupsEl = overlay.querySelector('#stat-groups');
@@ -205,12 +207,15 @@ async function loadProfile(overlay, userId) {
     const profile = await api.getUserProfile(userId);
     nameEl.textContent = profile.name;
     avatarEl.textContent = profile.name.charAt(0).toUpperCase();
+    idEl.textContent = `ID: ${profile.id}`;
     if (profile.created_at) {
       joinedEl.textContent = `Joined ${new Date(profile.created_at).toLocaleDateString()}`;
     }
   } catch {
-    nameEl.textContent = state.getCurrentUser()?.name || 'Unknown';
-    avatarEl.textContent = (state.getCurrentUser()?.name || '?').charAt(0).toUpperCase();
+    const fallbackUser = state.getCurrentUser();
+    nameEl.textContent = fallbackUser?.name || 'Unknown';
+    avatarEl.textContent = (fallbackUser?.name || '?').charAt(0).toUpperCase();
+    idEl.textContent = `ID: ${fallbackUser?.id ?? '—'}`;
     joinedEl.textContent = 'Profile unavailable (backend not connected)';
   }
 

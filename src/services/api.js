@@ -58,6 +58,10 @@ export async function joinRoom(code, password, userId) {
   });
 }
 
+export async function getUserGroupRooms(userId) {
+  return request(`/users/${userId}/rooms`);
+}
+
 // ========================
 // Direct Messaging
 // ========================

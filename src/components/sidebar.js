@@ -121,6 +121,7 @@ export function renderSidebar(container) {
   });
 
   // Load DMs
+  loadGroupRooms();
   loadDMs();
 
   // Subscribe to state changes
@@ -145,6 +146,17 @@ async function loadDMs() {
     state.setDMList(dms);
   } catch (err) {
     console.log('[Sidebar] Could not load DMs (backend not connected?):', err.message);
+  }
+}
+
+async function loadGroupRooms() {
+  const user = state.getCurrentUser();
+  if (!user) return;
+  try {
+    const rooms = await api.getUserGroupRooms(user.id);
+    state.setGroupRooms(rooms);
+  } catch (err) {
+    console.log('[Sidebar] Could not load group rooms (backend not connected?):', err.message);
   }
 }
 
@@ -178,8 +190,8 @@ function renderDMList(listEl, dms, activeRoom) {
   }
   listEl.innerHTML = dms.map(dm => `
     <li class="room-item ${activeRoom && activeRoom.roomId === dm.roomId ? 'active' : ''}" data-room-id="${dm.roomId}">
-      <div class="room-icon dm-icon">${dm.partner.name.charAt(0).toUpperCase()}</div>
-      <span class="room-name">${dm.partner.name}</span>
+      <div class="room-icon dm-icon">${(dm.partner?.name || 'U').charAt(0).toUpperCase()}</div>
+      <span class="room-name">${dm.partner?.name || `User ${dm.partner?.id || ''}`}</span>
     </li>
   `).join('');
 
@@ -188,7 +200,7 @@ function renderDMList(listEl, dms, activeRoom) {
       const roomId = parseInt(li.dataset.roomId);
       const dm = dms.find(d => d.roomId === roomId);
       if (dm) {
-        state.setActiveRoom({ roomId: dm.roomId, type: 'dm', name: dm.partner.name });
+        state.setActiveRoom({ roomId: dm.roomId, type: 'dm', name: dm.partner?.name || `User ${dm.partner?.id || ''}` });
       }
     });
   });

@@ -76,11 +76,46 @@ app.post("/api/rooms/join", async (req, res) => {
   }
 });
 
+app.get("/api/users/:userId/rooms", async (req, res) => {
+  try {
+    const rooms = await dbAll(
+      `SELECT r.id AS "roomId", r.code, r.type
+       FROM room_members rm
+       JOIN chatrooms r ON r.id = rm.room_id
+       WHERE rm.user_id = $1 AND r.type = 'group'
+       ORDER BY r.id DESC`,
+      [req.params.userId]
+    );
+    res.json(rooms);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch rooms" });
+  }
+});
+
 // ─── DMs ─────────────────────────────────────────────────────────────────────
 
 app.post("/api/dms", async (req, res) => {
   const { currentUserId, targetUserId } = req.body;
   try {
+    if (!currentUserId || !targetUserId) {
+      return res.status(400).json({ error: "Both user IDs are required" });
+    }
+    if (Number(currentUserId) === Number(targetUserId)) {
+      return res.status(400).json({ error: "Cannot start a DM with yourself" });
+    }
+
+    const [currentUser, targetUser] = await Promise.all([
+      dbGet("SELECT id FROM users WHERE id = $1", [currentUserId]),
+      dbGet("SELECT id FROM users WHERE id = $1", [targetUserId]),
+    ]);
+
+    if (!currentUser) {
+      return res.status(404).json({ error: "Current user not found" });
+    }
+    if (!targetUser) {
+      return res.status(404).json({ error: "Target user not found" });
+    }
+
     const existing = await dbGet(
       `SELECT r.id FROM chatrooms r
        JOIN room_members a ON a.room_id = r.id AND a.user_id = $1
