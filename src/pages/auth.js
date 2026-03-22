@@ -15,7 +15,7 @@ export function renderAuth(container, onLoginSuccess) {
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
           </div>
-          <h1 class="auth-title">ChatVerse</h1>
+          <h1 class="auth-title">ChatZ</h1>
           <p class="auth-subtitle">Connect. Chat. Collaborate.</p>
         </div>
 
@@ -41,7 +41,7 @@ export function renderAuth(container, onLoginSuccess) {
         </form>
 
         <div class="auth-divider"><span>or</span></div>
-        <button class="btn btn-demo btn-full" id="btn-demo">🚀 Try Demo Mode</button>
+        <button class="btn btn-demo btn-full" id="btn-demo">Try Demo Mode</button>
       </div>
 
       <div class="auth-particles">

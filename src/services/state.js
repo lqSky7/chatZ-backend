@@ -4,7 +4,7 @@
 // ============================================================
 
 // Restore user from localStorage if available
-const savedUser = localStorage.getItem('chatverse_user');
+const savedUser = localStorage.getItem('chatz_user');
 
 const state = {
   currentUser: savedUser ? JSON.parse(savedUser) : null,
@@ -74,7 +74,7 @@ export function getActiveBroadcast() {
 export function setCurrentUser(user) {
   state.currentUser = user;
   if (user) {
-    localStorage.setItem('chatverse_user', JSON.stringify(user));
+    localStorage.setItem('chatz_user', JSON.stringify(user));
   }
   notify();
 }
@@ -152,7 +152,7 @@ export function logout() {
   state.dmList = [];
   state.messages = [];
   state.broadcasts = [];
-  localStorage.removeItem('chatverse_user');
+  localStorage.removeItem('chatz_user');
   notify();
 }
 

@@ -35,7 +35,7 @@ export function renderChat(container) {
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
             </div>
-            <h3>Welcome to ChatVerse</h3>
+            <h3>Welcome to ChatZ</h3>
             <p>Join a group room or start a DM to begin chatting</p>
           </div>
           <div id="message-list" class="message-list hidden"></div>
