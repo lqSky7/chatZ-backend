@@ -3,7 +3,7 @@ const http = require("http");
 const WebSocket = require("ws");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
-const { initDB, getDB, saveDB } = require("./db");
+const { initDB, dbRun, dbGet, dbAll } = require("./db");
 
 const app = express();
 app.use(cors());
@@ -15,52 +15,6 @@ const wss = new WebSocket.Server({ server });
 // roomId -> Set of ws clients
 const rooms = new Map();
 
-// ─── Helper: run sql.js queries like better-sqlite3 ──────────────────────────
-
-// sql.js returns BigInt for INTEGER columns — convert to plain Numbers
-function normalizeRow(row) {
-  if (!row) return null;
-  const out = {};
-  for (const [key, val] of Object.entries(row)) {
-    out[key] = typeof val === 'bigint' ? Number(val) : val;
-  }
-  return out;
-}
-
-function dbRun(sql, params = []) {
-  const db = getDB();
-  db.run(sql, params);
-  const result = db.exec("SELECT last_insert_rowid() AS id");
-  const raw = result[0]?.values[0]?.[0];
-  const lastInsertRowid = typeof raw === 'bigint' ? Number(raw) : raw;
-  saveDB();
-  return { lastInsertRowid };
-}
-
-function dbGet(sql, params = []) {
-  const db = getDB();
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  if (stmt.step()) {
-    const row = normalizeRow(stmt.getAsObject());
-    stmt.free();
-    return row;
-  }
-  stmt.free();
-  return null;
-}
-
-function dbAll(sql, params = []) {
-  const db = getDB();
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const rows = [];
-  while (stmt.step()) {
-    rows.push(normalizeRow(stmt.getAsObject()));
-  }
-  stmt.free();
-  return rows;
-}
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
@@ -68,11 +22,12 @@ app.post("/api/register", async (req, res) => {
   const { name, password } = req.body;
   const pass_hash = await bcrypt.hash(password, 10);
   try {
-    const { lastInsertRowid } = dbRun(
-      "INSERT INTO users (name, pass_hash) VALUES (?, ?)",
+    const result = await dbRun(
+      "INSERT INTO users (name, pass_hash) VALUES ($1, $2) RETURNING id",
       [name, pass_hash]
     );
-    res.json({ id: lastInsertRowid, name });
+    const id = result.rows[0]?.id || result.lastInsertRowid;
+    res.json({ id, name });
   } catch {
     res.status(400).json({ error: "User already exists" });
   }
@@ -80,10 +35,14 @@ app.post("/api/register", async (req, res) => {
 
 app.post("/api/login", async (req, res) => {
   const { name, password } = req.body;
-  const user = dbGet("SELECT * FROM users WHERE name = ?", [name]);
-  if (!user || !(await bcrypt.compare(password, user.pass_hash)))
-    return res.status(401).json({ error: "Invalid credentials" });
-  res.json({ id: user.id, name: user.name });
+  try {
+    const user = await dbGet("SELECT * FROM users WHERE name = $1", [name]);
+    if (!user || !(await bcrypt.compare(password, user.pass_hash)))
+      return res.status(401).json({ error: "Invalid credentials" });
+    res.json({ id: user.id, name: user.name });
+  } catch {
+    res.status(500).json({ error: "Login failed" });
+  }
 });
 
 // ─── Group Rooms ─────────────────────────────────────────────────────────────
@@ -91,22 +50,26 @@ app.post("/api/login", async (req, res) => {
 app.post("/api/rooms/join", async (req, res) => {
   const { code, password, userId } = req.body;
   try {
-    let room = dbGet("SELECT * FROM chatrooms WHERE code = ?", [code]);
+    let room = await dbGet("SELECT * FROM chatrooms WHERE code = $1", [code]);
     if (!room) {
       const pass_hash = await bcrypt.hash(password, 10);
-      const { lastInsertRowid } = dbRun(
-        "INSERT INTO chatrooms (code, pass_hash, type) VALUES (?, ?, 'group')",
+      const result = await dbRun(
+        "INSERT INTO chatrooms (code, pass_hash, type) VALUES ($1, $2, 'group') RETURNING id",
         [code, pass_hash]
       );
-      room = { id: lastInsertRowid, code, type: "group" };
+      room = { id: result.rows[0]?.id || result.lastInsertRowid, code, type: "group" };
     } else {
       if (!(await bcrypt.compare(password, room.pass_hash)))
         return res.status(401).json({ error: "Invalid room password" });
     }
-    dbRun(
-      "INSERT OR IGNORE INTO room_members (room_id, user_id) VALUES (?, ?)",
-      [room.id, userId]
-    );
+    try {
+      await dbRun(
+        "INSERT INTO room_members (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        [room.id, userId]
+      );
+    } catch {
+      // Member already exists, that's fine
+    }
     res.json({ roomId: room.id, code: room.code, type: "group" });
   } catch {
     res.status(500).json({ error: "Failed to join room" });
@@ -115,13 +78,13 @@ app.post("/api/rooms/join", async (req, res) => {
 
 // ─── DMs ─────────────────────────────────────────────────────────────────────
 
-app.post("/api/dms", (req, res) => {
+app.post("/api/dms", async (req, res) => {
   const { currentUserId, targetUserId } = req.body;
   try {
-    const existing = dbGet(
+    const existing = await dbGet(
       `SELECT r.id FROM chatrooms r
-       JOIN room_members a ON a.room_id = r.id AND a.user_id = ?
-       JOIN room_members b ON b.room_id = r.id AND b.user_id = ?
+       JOIN room_members a ON a.room_id = r.id AND a.user_id = $1
+       JOIN room_members b ON b.room_id = r.id AND b.user_id = $2
        WHERE r.type = 'dm'
        LIMIT 1`,
       [currentUserId, targetUserId]
@@ -129,30 +92,32 @@ app.post("/api/dms", (req, res) => {
 
     if (existing) return res.json({ roomId: existing.id, type: "dm" });
 
-    const { lastInsertRowid } = dbRun(
-      "INSERT INTO chatrooms (type) VALUES ('dm')"
+    const result = await dbRun(
+      "INSERT INTO chatrooms (type) VALUES ('dm') RETURNING id"
     );
-    dbRun(
-      "INSERT INTO room_members (room_id, user_id) VALUES (?, ?)",
-      [lastInsertRowid, currentUserId]
+    const roomId = result.rows[0]?.id || result.lastInsertRowid;
+    
+    await dbRun(
+      "INSERT INTO room_members (room_id, user_id) VALUES ($1, $2)",
+      [roomId, currentUserId]
     );
-    dbRun(
-      "INSERT INTO room_members (room_id, user_id) VALUES (?, ?)",
-      [lastInsertRowid, targetUserId]
+    await dbRun(
+      "INSERT INTO room_members (room_id, user_id) VALUES ($1, $2)",
+      [roomId, targetUserId]
     );
-    res.json({ roomId: lastInsertRowid, type: "dm" });
+    res.json({ roomId, type: "dm" });
   } catch {
     res.status(500).json({ error: "Failed to initiate DM" });
   }
 });
 
-app.get("/api/users/:userId/dms", (req, res) => {
+app.get("/api/users/:userId/dms", async (req, res) => {
   try {
-    const dms = dbAll(
-      `SELECT r.id AS roomId, u.id, u.name
+    const dms = await dbAll(
+      `SELECT r.id AS "roomId", u.id, u.name
        FROM chatrooms r
-       JOIN room_members me ON me.room_id = r.id AND me.user_id = ?
-       JOIN room_members other ON other.room_id = r.id AND other.user_id != ?
+       JOIN room_members me ON me.room_id = r.id AND me.user_id = $1
+       JOIN room_members other ON other.room_id = r.id AND other.user_id != $2
        JOIN users u ON u.id = other.user_id
        WHERE r.type = 'dm'`,
       [req.params.userId, req.params.userId]
@@ -170,25 +135,26 @@ app.get("/api/users/:userId/dms", (req, res) => {
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 
-app.post("/api/rooms/:roomId/messages", (req, res) => {
+app.post("/api/rooms/:roomId/messages", async (req, res) => {
   const { roomId } = req.params;
   const { userId, content } = req.body;
 
-  const member = dbGet(
-    "SELECT 1 AS ok FROM room_members WHERE room_id = ? AND user_id = ?",
-    [roomId, userId]
-  );
-  if (!member) return res.status(403).json({ error: "Not a room member" });
-
   try {
-    const { lastInsertRowid } = dbRun(
-      "INSERT INTO messages (room_id, user_id, content) VALUES (?, ?, ?)",
+    const member = await dbGet(
+      "SELECT 1 AS ok FROM room_members WHERE room_id = $1 AND user_id = $2",
+      [roomId, userId]
+    );
+    if (!member) return res.status(403).json({ error: "Not a room member" });
+
+    const result = await dbRun(
+      "INSERT INTO messages (room_id, user_id, content) VALUES ($1, $2, $3) RETURNING id",
       [roomId, userId, content]
     );
-    const msg = dbGet("SELECT * FROM messages WHERE id = ?", [lastInsertRowid]);
+    const msgId = result.rows[0]?.id || result.lastInsertRowid;
+    const msg = await dbGet("SELECT * FROM messages WHERE id = $1", [msgId]);
 
     // Look up sender name for the broadcast
-    const sender = dbGet("SELECT name FROM users WHERE id = ?", [userId]);
+    const sender = await dbGet("SELECT name FROM users WHERE id = $1", [userId]);
     const fullMsg = { ...msg, name: sender?.name || 'Unknown' };
 
     // Broadcast to WebSocket subscribers
@@ -205,38 +171,42 @@ app.post("/api/rooms/:roomId/messages", (req, res) => {
 
 // ─── Profiles & Stats ─────────────────────────────────────────────────────────
 
-app.get("/api/users/:userId/profile", (req, res) => {
-  const user = dbGet(
-    "SELECT id, name, created_at FROM users WHERE id = ?",
-    [req.params.userId]
-  );
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user);
+app.get("/api/users/:userId/profile", async (req, res) => {
+  try {
+    const user = await dbGet(
+      "SELECT id, name, created_at FROM users WHERE id = $1",
+      [req.params.userId]
+    );
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
 });
 
-app.get("/api/users/:userId/stats", (req, res) => {
+app.get("/api/users/:userId/stats", async (req, res) => {
   try {
     const { userId } = req.params;
-    const msgRow = dbGet(
-      "SELECT COUNT(*) AS total_messages FROM messages WHERE user_id = ?",
+    const msgRow = await dbGet(
+      "SELECT COUNT(*) AS total_messages FROM messages WHERE user_id = $1",
       [userId]
     );
-    const groupRow = dbGet(
+    const groupRow = await dbGet(
       `SELECT COUNT(*) AS groups_joined FROM room_members rm
        JOIN chatrooms r ON r.id = rm.room_id
-       WHERE rm.user_id = ? AND r.type = 'group'`,
+       WHERE rm.user_id = $1 AND r.type = 'group'`,
       [userId]
     );
-    const dmRow = dbGet(
+    const dmRow = await dbGet(
       `SELECT COUNT(*) AS active_dms FROM room_members rm
        JOIN chatrooms r ON r.id = rm.room_id
-       WHERE rm.user_id = ? AND r.type = 'dm'`,
+       WHERE rm.user_id = $1 AND r.type = 'dm'`,
       [userId]
     );
     res.json({
-      total_messages: msgRow?.total_messages || 0,
-      groups_joined: groupRow?.groups_joined || 0,
-      active_dms: dmRow?.active_dms || 0,
+      total_messages: parseInt(msgRow?.total_messages || 0),
+      groups_joined: parseInt(groupRow?.groups_joined || 0),
+      active_dms: parseInt(dmRow?.active_dms || 0),
     });
   } catch {
     res.status(500).json({ error: "Failed to load stats" });
@@ -248,7 +218,7 @@ app.get("/api/users/:userId/stats", (req, res) => {
 wss.on("connection", (ws) => {
   let currentRoom = null;
 
-  ws.on("message", (raw) => {
+  ws.on("message", async (raw) => {
     let data;
     try {
       data = JSON.parse(raw);
@@ -268,10 +238,10 @@ wss.on("connection", (ws) => {
       currentRoom = roomId;
 
       // Send history
-      const messages = dbAll(
+      const messages = await dbAll(
         `SELECT m.id, m.user_id, u.name, m.content, m.created_at
          FROM messages m JOIN users u ON u.id = m.user_id
-         WHERE m.room_id = ? ORDER BY m.created_at ASC`,
+         WHERE m.room_id = $1 ORDER BY m.created_at ASC`,
         [roomId]
       );
       ws.send(JSON.stringify({ action: "history", messages }));
@@ -286,10 +256,16 @@ wss.on("connection", (ws) => {
 // ─── Start ─────────────────────────────────────────────────────────────────────
 
 async function start() {
-  await initDB();
-  server.listen(3000, () =>
-    console.log("Server running on http://localhost:3000")
-  );
+  try {
+    await initDB();
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () =>
+      console.log(`Server running on http://localhost:${PORT}`)
+    );
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 }
 
 start();
