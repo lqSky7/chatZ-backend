@@ -121,8 +121,11 @@ export function renderSidebar(container) {
   });
 
   // Load DMs
-  loadGroupRooms();
-  loadDMs();
+  (async () => {
+    await Promise.all([loadGroupRooms(), loadDMs()]);
+    // After rooms are loaded, try to restore the active room from localStorage
+    state.tryRestoreActiveRoom();
+  })();
 
   // Subscribe to state changes
   state.subscribe((s) => {

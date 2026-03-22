@@ -5,15 +5,17 @@
 
 // Restore user from localStorage if available
 const savedUser = localStorage.getItem('chatz_user');
+const savedActiveRoom = localStorage.getItem('chatz_active_room');
+const savedBroadcasts = localStorage.getItem('chatz_broadcasts');
 
 const state = {
   currentUser: savedUser ? JSON.parse(savedUser) : null,
-  activeRoom: null,     // { roomId, code?, type, name? }
+  activeRoom: savedActiveRoom ? JSON.parse(savedActiveRoom) : null, // Restore on reload
   activeView: null,     // 'chat' | 'broadcast' — tracks which view is active
   groupRooms: [],       // [{ roomId, code, type }]
   dmList: [],           // [{ roomId, partner: { id, name } }]
   messages: [],         // [{ id, user_id, name?, content, created_at }]
-  broadcasts: [],       // [{ id, name, recipientIds, messages: [{ content, sentAt }] }]
+  broadcasts: savedBroadcasts ? JSON.parse(savedBroadcasts) : [], // Restore on reload
   activeBroadcast: null, // currently selected broadcast
 };
 
@@ -84,6 +86,11 @@ export function setActiveRoom(room) {
   state.activeBroadcast = null;
   state.activeView = 'chat';
   state.messages = [];
+  if (room) {
+    localStorage.setItem('chatz_active_room', JSON.stringify(room));
+  } else {
+    localStorage.removeItem('chatz_active_room');
+  }
   notify();
 }
 
@@ -121,6 +128,7 @@ export function addMessage(message) {
 
 export function addBroadcast(broadcast) {
   state.broadcasts.push(broadcast);
+  localStorage.setItem('chatz_broadcasts', JSON.stringify(state.broadcasts));
   notify();
 }
 
@@ -129,6 +137,9 @@ export function setActiveBroadcast(broadcast) {
   state.activeRoom = null;
   state.activeView = 'broadcast';
   state.messages = [];
+  if (broadcast) {
+    localStorage.removeItem('chatz_active_room');
+  }
   notify();
 }
 
@@ -139,8 +150,39 @@ export function addBroadcastMessage(broadcastId, message) {
     if (state.activeBroadcast && state.activeBroadcast.id === broadcastId) {
       state.activeBroadcast = { ...bc };
     }
+    localStorage.setItem('chatz_broadcasts', JSON.stringify(state.broadcasts));
     notify();
   }
+}
+
+export function tryRestoreActiveRoom() {
+  // After room lists are loaded, try to restore the saved active room
+  if (!state.activeRoom) return; // Only restore if we have something saved
+  
+  const roomId = state.activeRoom.roomId;
+  
+  // Look for the room in group rooms
+  const groupRoom = state.groupRooms.find(r => r.roomId === roomId);
+  if (groupRoom) {
+    // Room exists in group rooms, keep it
+    state.activeRoom = { ...groupRoom, name: groupRoom.code || `Room ${groupRoom.roomId}` };
+    notify();
+    return;
+  }
+  
+  // Look for the room in DMs
+  const dm = state.dmList.find(d => d.roomId === roomId);
+  if (dm) {
+    // Room exists in DMs, keep it
+    state.activeRoom = { roomId: dm.roomId, type: 'dm', name: dm.partner?.name || `User ${dm.partner?.id || ''}` };
+    notify();
+    return;
+  }
+  
+  // Room doesn't exist anymore, clear it
+  state.activeRoom = null;
+  localStorage.removeItem('chatz_active_room');
+  notify();
 }
 
 export function logout() {
@@ -153,6 +195,8 @@ export function logout() {
   state.messages = [];
   state.broadcasts = [];
   localStorage.removeItem('chatz_user');
+  localStorage.removeItem('chatz_active_room');
+  localStorage.removeItem('chatz_broadcasts');
   notify();
 }
 
