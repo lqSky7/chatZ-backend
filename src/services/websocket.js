@@ -4,7 +4,13 @@
 // To connect the backend, ensure WS_URL points to your server.
 // ============================================================
 
-const WS_URL = 'ws://localhost:3000';
+const getWsUrl = () => {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  const baseUrl = apiUrl.replace(/\/api$/, ''); // Remove /api suffix
+  return baseUrl.replace(/^http/, 'ws'); // Convert http/https to ws/wss
+};
+
+const WS_URL = getWsUrl();
 
 let socket = null;
 let listeners = {

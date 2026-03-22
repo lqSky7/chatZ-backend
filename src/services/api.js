@@ -4,7 +4,7 @@
 // To connect the backend, just ensure BASE_URL points to your server.
 // ============================================================
 
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 /**
  * Generic fetch wrapper with JSON handling
