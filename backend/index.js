@@ -14,6 +14,16 @@ const wss = new WebSocket.Server({ server });
 
 // roomId -> Set of ws clients
 const rooms = new Map();
+// userId -> Set of ws clients
+const userSockets = new Map();
+
+function sendToUser(userId, payload) {
+  if (!userId) return;
+  const serialized = JSON.stringify(payload);
+  userSockets.get(Number(userId))?.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) client.send(serialized);
+  });
+}
 
 // ─── Health Check ────────────────────────────────────────────────────────────
 
@@ -38,6 +48,8 @@ app.get("/", (req, res) => {
         "/api/users/:userId/rooms",
         "/api/rooms/:roomId/users",
         "/api/rooms/remove/:UserID",
+        "/api/rooms/:roomId/requests?userId=...",
+        "/api/rooms/requests/:requestId/review",
       ],
       dms: ["/api/dms", "/api/users/:userId/dms"],
       messages: "/api/rooms/:roomId/messages",
@@ -81,27 +93,82 @@ app.post("/api/login", async (req, res) => {
 app.post("/api/rooms/join", async (req, res) => {
   const { code, password, userId } = req.body;
   try {
+    if (!code || !password || !userId) {
+      return res.status(400).json({ error: "code, password and userId are required" });
+    }
+
     let room = await dbGet("SELECT * FROM chatrooms WHERE code = $1", [code]);
     if (!room) {
       const pass_hash = await bcrypt.hash(password, 10);
       const result = await dbRun(
-        "INSERT INTO chatrooms (code, pass_hash, type) VALUES ($1, $2, 'group') RETURNING id",
-        [code, pass_hash]
+        "INSERT INTO chatrooms (code, pass_hash, type, creator_id) VALUES ($1, $2, 'group', $3) RETURNING id, creator_id",
+        [code, pass_hash, userId]
       );
-      room = { id: result.rows[0]?.id || result.lastInsertRowid, code, type: "group" };
-    } else {
-      if (!(await bcrypt.compare(password, room.pass_hash)))
-        return res.status(401).json({ error: "Invalid room password" });
-    }
-    try {
+      room = {
+        id: result.rows[0]?.id || result.lastInsertRowid,
+        code,
+        type: "group",
+        creator_id: result.rows[0]?.creator_id || Number(userId),
+      };
+
       await dbRun(
         "INSERT INTO room_members (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
         [room.id, userId]
       );
-    } catch {
-      // Member already exists, that's fine
+
+      return res.json({ roomId: room.id, code: room.code, type: "group", requiresApproval: true });
+    } else {
+      if (!(await bcrypt.compare(password, room.pass_hash)))
+        return res.status(401).json({ error: "Invalid room password" });
     }
-    res.json({ roomId: room.id, code: room.code, type: "group" });
+
+    const existingMember = await dbGet(
+      "SELECT 1 AS ok FROM room_members WHERE room_id = $1 AND user_id = $2",
+      [room.id, userId]
+    );
+
+    if (existingMember) {
+      return res.json({ roomId: room.id, code: room.code, type: "group", requiresApproval: true });
+    }
+
+    if (Number(room.creator_id) === Number(userId)) {
+      await dbRun(
+        "INSERT INTO room_members (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        [room.id, userId]
+      );
+      return res.json({ roomId: room.id, code: room.code, type: "group", requiresApproval: true });
+    }
+
+    const requestResult = await dbRun(
+      `INSERT INTO room_join_requests (room_id, user_id, status, reviewed_by, reviewed_at, created_at)
+       VALUES ($1, $2, 'pending', NULL, NULL, NOW())
+       ON CONFLICT (room_id, user_id)
+       DO UPDATE SET status = 'pending', reviewed_by = NULL, reviewed_at = NULL, created_at = NOW()
+       RETURNING id`,
+      [room.id, userId]
+    );
+
+    const joinRequestId = requestResult.rows[0]?.id || requestResult.lastInsertRowid;
+
+    const requester = await dbGet("SELECT id, name FROM users WHERE id = $1", [userId]);
+    sendToUser(room.creator_id, {
+      action: "joinRequestSubmitted",
+      request: {
+        id: joinRequestId,
+        roomId: room.id,
+        roomCode: room.code,
+        userId: requester?.id || Number(userId),
+        name: requester?.name || `User ${userId}`,
+      },
+    });
+
+    res.status(202).json({
+      pendingApproval: true,
+      roomId: room.id,
+      code: room.code,
+      type: "group",
+      message: "Join request sent. Waiting for room creator approval.",
+    });
   } catch {
     res.status(500).json({ error: "Failed to join room" });
   }
@@ -111,6 +178,7 @@ app.get("/api/users/:userId/rooms", async (req, res) => {
   try {
     const rooms = await dbAll(
       `SELECT r.id AS "roomId", r.code, r.type
+        , r.creator_id AS "creatorId"
        FROM room_members rm
        JOIN chatrooms r ON r.id = rm.room_id
        WHERE rm.user_id = $1 AND r.type = 'group'
@@ -120,6 +188,100 @@ app.get("/api/users/:userId/rooms", async (req, res) => {
     res.json(rooms);
   } catch {
     res.status(500).json({ error: "Failed to fetch rooms" });
+  }
+});
+
+app.get("/api/rooms/:roomId/requests", async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const creatorUserId = Number(req.query.userId);
+
+    if (!creatorUserId) {
+      return res.status(400).json({ error: "userId query param is required" });
+    }
+
+    const room = await dbGet("SELECT id, creator_id, type FROM chatrooms WHERE id = $1", [roomId]);
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+    if (room.type !== "group") {
+      return res.status(400).json({ error: "Only group rooms support join requests" });
+    }
+    if (Number(room.creator_id) !== creatorUserId) {
+      return res.status(403).json({ error: "Only the room creator can view join requests" });
+    }
+
+    const requests = await dbAll(
+      `SELECT rjr.id, rjr.user_id AS "userId", u.name, rjr.status, rjr.created_at AS "createdAt"
+       FROM room_join_requests rjr
+       JOIN users u ON u.id = rjr.user_id
+       WHERE rjr.room_id = $1 AND rjr.status = 'pending'
+       ORDER BY rjr.created_at ASC`,
+      [roomId]
+    );
+
+    res.json(requests);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch join requests" });
+  }
+});
+
+app.post("/api/rooms/requests/:requestId/review", async (req, res) => {
+  try {
+    const requestId = Number(req.params.requestId);
+    const { creatorUserId, approve } = req.body;
+
+    if (!requestId || !creatorUserId || typeof approve !== "boolean") {
+      return res.status(400).json({ error: "requestId, creatorUserId and approve are required" });
+    }
+
+    const requestRow = await dbGet(
+      `SELECT rjr.id, rjr.room_id AS "roomId", rjr.user_id AS "userId", rjr.status,
+              r.code AS "roomCode", r.creator_id AS "creatorId", r.type
+       FROM room_join_requests rjr
+       JOIN chatrooms r ON r.id = rjr.room_id
+       WHERE rjr.id = $1`,
+      [requestId]
+    );
+
+    if (!requestRow) {
+      return res.status(404).json({ error: "Join request not found" });
+    }
+    if (requestRow.type !== "group") {
+      return res.status(400).json({ error: "Only group room requests are reviewable" });
+    }
+    if (Number(requestRow.creatorId) !== Number(creatorUserId)) {
+      return res.status(403).json({ error: "Only the room creator can review this request" });
+    }
+    if (requestRow.status !== "pending") {
+      return res.status(400).json({ error: "This join request has already been reviewed" });
+    }
+
+    const nextStatus = approve ? "approved" : "rejected";
+    await dbRun(
+      "UPDATE room_join_requests SET status = $1, reviewed_by = $2, reviewed_at = NOW() WHERE id = $3",
+      [nextStatus, creatorUserId, requestId]
+    );
+
+    if (approve) {
+      await dbRun(
+        "INSERT INTO room_members (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        [requestRow.roomId, requestRow.userId]
+      );
+    }
+
+    sendToUser(requestRow.userId, {
+      action: approve ? "joinRequestApproved" : "joinRequestRejected",
+      room: {
+        roomId: requestRow.roomId,
+        code: requestRow.roomCode,
+        type: "group",
+      },
+    });
+
+    res.json({ success: true, status: nextStatus, roomId: requestRow.roomId, userId: requestRow.userId });
+  } catch {
+    res.status(500).json({ error: "Failed to review join request" });
   }
 });
 
@@ -347,6 +509,7 @@ app.get("/api/users/:userId/stats", async (req, res) => {
 
 wss.on("connection", (ws) => {
   let currentRoom = null;
+  let identifiedUserId = null;
 
   ws.on("message", async (raw) => {
     let data;
@@ -375,11 +538,28 @@ wss.on("connection", (ws) => {
         [roomId]
       );
       ws.send(JSON.stringify({ action: "history", messages }));
+      return;
+    }
+
+    if (data.action === "identify") {
+      const userId = Number(data.userId);
+      if (!userId) return;
+
+      if (identifiedUserId !== null) {
+        userSockets.get(identifiedUserId)?.delete(ws);
+      }
+
+      if (!userSockets.has(userId)) userSockets.set(userId, new Set());
+      userSockets.get(userId).add(ws);
+      identifiedUserId = userId;
+
+      ws.send(JSON.stringify({ action: "identified", userId }));
     }
   });
 
   ws.on("close", () => {
     if (currentRoom !== null) rooms.get(currentRoom)?.delete(ws);
+    if (identifiedUserId !== null) userSockets.get(identifiedUserId)?.delete(ws);
   });
 });
 

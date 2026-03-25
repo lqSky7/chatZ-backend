@@ -94,6 +94,17 @@ export async function removeUserFromGroupRoom(userId, roomId) {
   });
 }
 
+export async function getRoomJoinRequests(roomId, userId) {
+  return request(`/rooms/${roomId}/requests?userId=${userId}`);
+}
+
+export async function reviewRoomJoinRequest(requestId, creatorUserId, approve) {
+  return request(`/rooms/requests/${requestId}/review`, {
+    method: 'POST',
+    body: JSON.stringify({ creatorUserId, approve }),
+  });
+}
+
 // ========================
 // Direct Messaging
 // ========================

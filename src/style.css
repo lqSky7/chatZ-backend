@@ -999,6 +999,22 @@ body {
   cursor: not-allowed;
 }
 
+.room-requests-block {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.room-request-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.room-request-btn {
+  padding: 0.38rem 0.62rem;
+  font-size: var(--text-xs);
+}
+
 /* Broadcast */
 .broadcast-icon {
   background: color-mix(in oklab, var(--accent-2) 25%, var(--surface-1) 75%);

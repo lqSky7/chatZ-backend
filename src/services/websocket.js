@@ -17,10 +17,15 @@ let pendingJoin = null;
 let listeners = {
   history: [],
   newMessage: [],
+  joinRequestSubmitted: [],
+  joinRequestApproved: [],
+  joinRequestRejected: [],
   open: [],
   close: [],
   error: [],
 };
+
+let identifiedUserId = null;
 
 /**
  * Open a WebSocket connection
@@ -35,6 +40,9 @@ export function connect() {
 
   socket.addEventListener('open', () => {
     console.log('[WS] Connected');
+    if (identifiedUserId) {
+      socket.send(JSON.stringify({ action: 'identify', userId: identifiedUserId }));
+    }
     if (pendingJoin) {
       socket.send(JSON.stringify({ action: 'join', roomId: pendingJoin.roomId, userId: pendingJoin.userId }));
       pendingJoin = null;
@@ -60,11 +68,26 @@ export function connect() {
         listeners.history.forEach(cb => cb(data.messages));
       } else if (data.action === 'newMessage') {
         listeners.newMessage.forEach(cb => cb(data.message));
+      } else if (data.action === 'joinRequestSubmitted') {
+        listeners.joinRequestSubmitted.forEach(cb => cb(data.request));
+      } else if (data.action === 'joinRequestApproved') {
+        listeners.joinRequestApproved.forEach(cb => cb(data.room));
+      } else if (data.action === 'joinRequestRejected') {
+        listeners.joinRequestRejected.forEach(cb => cb(data.room));
       }
     } catch (err) {
       console.error('[WS] Failed to parse message:', err);
     }
   });
+}
+
+export function identifyUser(userId) {
+  identifiedUserId = userId ? Number(userId) : null;
+  if (!identifiedUserId) return;
+
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ action: 'identify', userId: identifiedUserId }));
+  }
 }
 
 /**
@@ -111,6 +134,27 @@ export function onNewMessage(callback) {
   };
 }
 
+export function onJoinRequestSubmitted(callback) {
+  listeners.joinRequestSubmitted.push(callback);
+  return () => {
+    listeners.joinRequestSubmitted = listeners.joinRequestSubmitted.filter(cb => cb !== callback);
+  };
+}
+
+export function onJoinRequestApproved(callback) {
+  listeners.joinRequestApproved.push(callback);
+  return () => {
+    listeners.joinRequestApproved = listeners.joinRequestApproved.filter(cb => cb !== callback);
+  };
+}
+
+export function onJoinRequestRejected(callback) {
+  listeners.joinRequestRejected.push(callback);
+  return () => {
+    listeners.joinRequestRejected = listeners.joinRequestRejected.filter(cb => cb !== callback);
+  };
+}
+
 /**
  * Register a listener for connection open
  */
@@ -140,8 +184,18 @@ export function disconnect() {
     socket = null;
   }
   pendingJoin = null;
+  identifiedUserId = null;
   // Clear all listeners
-  listeners = { history: [], newMessage: [], open: [], close: [], error: [] };
+  listeners = {
+    history: [],
+    newMessage: [],
+    joinRequestSubmitted: [],
+    joinRequestApproved: [],
+    joinRequestRejected: [],
+    open: [],
+    close: [],
+    error: [],
+  };
 }
 
 /**

@@ -118,6 +118,10 @@ export function renderChat(container) {
 
   // Connect to WebSocket
   ws.connect();
+  const currentUser = state.getCurrentUser();
+  if (currentUser?.id) {
+    ws.identifyUser(currentUser.id);
+  }
 
   ws.onOpen(() => {
     connectionDot.classList.remove('disconnected');
@@ -129,6 +133,29 @@ export function renderChat(container) {
     connectionDot.classList.remove('connected');
     connectionDot.classList.add('disconnected');
     connectionDot.title = 'Disconnected';
+  });
+
+  ws.onJoinRequestApproved(async (room) => {
+    const user = state.getCurrentUser();
+    if (!user) return;
+    try {
+      const rooms = await api.getUserGroupRooms(user.id);
+      state.setGroupRooms(rooms);
+      if (room?.roomId) {
+        state.setActiveRoom({ ...room, name: room.code || `Room ${room.roomId}` });
+      }
+      window.alert(`Your request to join ${room?.code || 'the room'} was approved.`);
+    } catch {
+      window.alert('Your join request was approved. Refresh room list if needed.');
+    }
+  });
+
+  ws.onJoinRequestRejected((room) => {
+    window.alert(`Your request to join ${room?.code || 'this room'} was rejected.`);
+  });
+
+  ws.onJoinRequestSubmitted((request) => {
+    window.alert(`${request?.name || 'A user'} requested to join ${request?.roomCode || 'your room'}. Open room users to approve.`);
   });
 
   // *** FIX: Track the last joined room to avoid re-joining on every state change ***

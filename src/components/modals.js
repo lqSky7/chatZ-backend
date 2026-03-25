@@ -92,9 +92,13 @@ export function showJoinRoomModal() {
 
     try {
       const room = await api.joinRoom(code, password, user.id);
-      state.addGroupRoom(room);
-      state.setActiveRoom({ ...room, name: room.code });
-      closeModal('modal-join-room');
+      if (room.pendingApproval) {
+        showModalError(errorEl, room.message || 'Join request sent. Waiting for creator approval.');
+      } else {
+        state.addGroupRoom(room);
+        state.setActiveRoom({ ...room, name: room.code });
+        closeModal('modal-join-room');
+      }
     } catch (err) {
       showModalError(errorEl, err.message || 'Failed to join room.');
     } finally {
@@ -369,12 +373,19 @@ export async function showRoomUsersModal(room) {
     <div id="room-users-list" class="room-users-list">
       <p class="room-list-empty">Loading users...</p>
     </div>
+    <div id="room-requests-block" class="room-requests-block hidden">
+      <h3 class="broadcast-section-title">Pending Join Requests</h3>
+      <div id="room-requests-list" class="room-users-list"></div>
+    </div>
     <p id="room-users-error" class="modal-error hidden"></p>
   `);
 
   const listEl = overlay.querySelector('#room-users-list');
+  const requestsBlockEl = overlay.querySelector('#room-requests-block');
+  const requestsListEl = overlay.querySelector('#room-requests-list');
   const errorEl = overlay.querySelector('#room-users-error');
   const currentUser = state.getCurrentUser();
+  const isCreator = currentUser && Number(room.creatorId) === Number(currentUser.id);
 
   async function loadUsers() {
     try {
@@ -416,7 +427,54 @@ export async function showRoomUsersModal(room) {
     }
   }
 
-  await loadUsers();
+  async function loadJoinRequests() {
+    if (!isCreator) {
+      requestsBlockEl.classList.add('hidden');
+      return;
+    }
+
+    requestsBlockEl.classList.remove('hidden');
+    try {
+      const requests = await api.getRoomJoinRequests(room.roomId, currentUser.id);
+      if (!requests.length) {
+        requestsListEl.innerHTML = '<p class="room-list-empty">No pending requests</p>';
+        return;
+      }
+
+      requestsListEl.innerHTML = requests.map((req) => `
+        <div class="room-user-row">
+          <div class="room-user-meta">
+            <span class="room-user-name">${escapeHTML(req.name)}</span>
+            <span class="room-user-id">ID: ${req.userId}</span>
+          </div>
+          <div class="room-request-actions">
+            <button class="btn btn-demo room-request-btn" data-request-id="${req.id}" data-approve="true">Approve</button>
+            <button class="btn btn-demo room-request-btn" data-request-id="${req.id}" data-approve="false">Reject</button>
+          </div>
+        </div>
+      `).join('');
+
+      requestsListEl.querySelectorAll('.room-request-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const requestId = Number(btn.dataset.requestId);
+          const approve = btn.dataset.approve === 'true';
+          btn.disabled = true;
+          try {
+            await api.reviewRoomJoinRequest(requestId, currentUser.id, approve);
+            await Promise.all([loadUsers(), loadJoinRequests()]);
+          } catch (err) {
+            showModalError(errorEl, err.message || 'Failed to review request.');
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch (err) {
+      showModalError(errorEl, err.message || 'Failed to load join requests.');
+      requestsListEl.innerHTML = '<p class="room-list-empty">Could not load requests</p>';
+    }
+  }
+
+  await Promise.all([loadUsers(), loadJoinRequests()]);
 }
 
 function escapeHTML(str) {

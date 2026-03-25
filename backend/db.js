@@ -28,6 +28,12 @@ async function initDB() {
       )
     `);
 
+    // Add creator_id for group ownership on existing deployments
+    await pool.query(`
+      ALTER TABLE chatrooms
+      ADD COLUMN IF NOT EXISTS creator_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+    `);
+
     // Create room_members table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS room_members (
@@ -45,6 +51,20 @@ async function initDB() {
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Track pending join requests that must be reviewed by room creators
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS room_join_requests (
+        id SERIAL PRIMARY KEY,
+        room_id INTEGER NOT NULL REFERENCES chatrooms(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),
+        reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(room_id, user_id)
       )
     `);
 
