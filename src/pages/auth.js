@@ -80,9 +80,16 @@ export function renderAuth(container, onLoginSuccess) {
     const password = passwordInput.value.trim();
 
     if (!name || !password) {
+      console.warn('[Auth] ⚠️ Form submission attempted with empty fields');
       showError('Please fill in all fields.');
       return;
     }
+
+    console.log(`[Auth] 🔐 ${mode === 'login' ? 'Login' : 'Register'} attempt started`, {
+      username: name,
+      mode,
+      timestamp: new Date().toISOString(),
+    });
 
     setLoading(true);
     errorEl.classList.add('hidden');
@@ -94,9 +101,21 @@ export function renderAuth(container, onLoginSuccess) {
       } else {
         user = await api.register(name, password);
       }
+      
+      console.log(`[Auth] ✅ ${mode === 'login' ? 'Login' : 'Register'} successful`, {
+        userId: user.id,
+        username: user.name,
+        timestamp: new Date().toISOString(),
+      });
+      
       state.setCurrentUser(user);
       onLoginSuccess(user);
     } catch (err) {
+      console.error(`[Auth] ❌ ${mode === 'login' ? 'Login' : 'Register'} failed`, {
+        error: err.message,
+        username: name,
+        timestamp: new Date().toISOString(),
+      });
       showError(err.message || 'Something went wrong. Is the backend running?');
     } finally {
       setLoading(false);

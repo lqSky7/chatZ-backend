@@ -16,15 +16,36 @@ async function request(endpoint, options = {}) {
     ...options,
   };
 
+  const method = options.method || 'GET';
+  
+  // Log outgoing request
+  console.log(`[API] ➡️ ${method} ${endpoint}`, {
+    url,
+    method,
+    body: options.body ? JSON.parse(options.body) : null,
+    timestamp: new Date().toISOString(),
+  });
+
   try {
     const res = await fetch(url, config);
     const data = await res.json();
+    
     if (!res.ok) {
       throw new Error(data.error || `Request failed with status ${res.status}`);
     }
+    
+    // Log successful response
+    console.log(`[API] ✅ ${method} ${endpoint} - Status: ${res.status}`, {
+      response: data,
+      timestamp: new Date().toISOString(),
+    });
+    
     return data;
   } catch (err) {
-    console.error(`[API] ${options.method || 'GET'} ${endpoint} failed:`, err.message);
+    console.error(`[API] ❌ ${method} ${endpoint} failed:`, {
+      error: err.message,
+      timestamp: new Date().toISOString(),
+    });
     throw err;
   }
 }
