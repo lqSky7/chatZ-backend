@@ -358,3 +358,71 @@ export function showCreateBroadcastModal() {
   nameInput.focus();
 }
 
+// ========================
+// Room Members Modal
+// ========================
+
+export async function showRoomUsersModal(room) {
+  const overlay = createModalOverlay('modal-room-users', `
+    <h2 class="modal-title">Room Members</h2>
+    <p class="modal-desc">Manage users in <strong>${escapeHTML(room.code || `Room ${room.roomId}`)}</strong>.</p>
+    <div id="room-users-list" class="room-users-list">
+      <p class="room-list-empty">Loading users...</p>
+    </div>
+    <p id="room-users-error" class="modal-error hidden"></p>
+  `);
+
+  const listEl = overlay.querySelector('#room-users-list');
+  const errorEl = overlay.querySelector('#room-users-error');
+  const currentUser = state.getCurrentUser();
+
+  async function loadUsers() {
+    try {
+      const users = await api.getRoomUsers(room.roomId);
+      if (!users.length) {
+        listEl.innerHTML = '<p class="room-list-empty">No users in this room</p>';
+        return;
+      }
+
+      listEl.innerHTML = users.map((u) => `
+        <div class="room-user-row" data-user-id="${u.id}">
+          <div class="room-user-meta">
+            <span class="room-user-name">${escapeHTML(u.name)}</span>
+            <span class="room-user-id">ID: ${u.id}${currentUser && currentUser.id === u.id ? ' (you)' : ''}</span>
+          </div>
+          <button class="btn btn-demo room-user-remove-btn" data-user-id="${u.id}" ${currentUser && currentUser.id === u.id ? 'disabled' : ''}>
+            Remove
+          </button>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('.room-user-remove-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const targetUserId = Number(btn.dataset.userId);
+          btn.disabled = true;
+
+          try {
+            await api.removeUserFromGroupRoom(targetUserId, room.roomId);
+            await loadUsers();
+          } catch (err) {
+            showModalError(errorEl, err.message || 'Failed to remove user.');
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch (err) {
+      showModalError(errorEl, err.message || 'Failed to load room users.');
+      listEl.innerHTML = '<p class="room-list-empty">Could not load users</p>';
+    }
+  }
+
+  await loadUsers();
+}
+
+function escapeHTML(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+

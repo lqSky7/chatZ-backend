@@ -557,6 +557,18 @@ body {
   text-overflow: ellipsis;
 }
 
+.room-manage-btn {
+  margin-left: auto;
+  width: 1.65rem;
+  height: 1.65rem;
+  opacity: 0;
+}
+
+.room-item:hover .room-manage-btn,
+.room-item.active .room-manage-btn {
+  opacity: 1;
+}
+
 .room-name-group {
   display: grid;
   min-width: 0;
@@ -945,6 +957,46 @@ body {
   font-size: var(--text-lg);
   font-weight: 700;
   color: var(--text-0);
+}
+
+.room-users-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.room-user-row {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  padding: 0.62rem 0.7rem;
+  background: var(--surface-0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.room-user-meta {
+  display: grid;
+  min-width: 0;
+}
+
+.room-user-name {
+  color: var(--text-0);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-user-id {
+  color: var(--text-2);
+  font-size: var(--text-xs);
+}
+
+.room-user-remove-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Broadcast */

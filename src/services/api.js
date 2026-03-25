@@ -83,6 +83,17 @@ export async function getUserGroupRooms(userId) {
   return request(`/users/${userId}/rooms`);
 }
 
+export async function getRoomUsers(roomId) {
+  return request(`/rooms/${roomId}/users`);
+}
+
+export async function removeUserFromGroupRoom(userId, roomId) {
+  return request(`/rooms/remove/${userId}`, {
+    method: 'POST',
+    body: JSON.stringify({ roomId }),
+  });
+}
+
 // ========================
 // Direct Messaging
 // ========================
