@@ -33,7 +33,12 @@ app.get("/", (req, res) => {
     endpoints: {
       health: "/health",
       auth: ["/api/register", "/api/login"],
-      rooms: ["/api/rooms/join", "/api/users/:userId/rooms"],
+      rooms: [
+        "/api/rooms/join",
+        "/api/users/:userId/rooms",
+        "/api/rooms/:roomId/users",
+        "/api/rooms/remove/:UserID",
+      ],
       dms: ["/api/dms", "/api/users/:userId/dms"],
       messages: "/api/rooms/:roomId/messages",
       profiles: ["/api/users/:userId/profile", "/api/users/:userId/stats"],
@@ -115,6 +120,70 @@ app.get("/api/users/:userId/rooms", async (req, res) => {
     res.json(rooms);
   } catch {
     res.status(500).json({ error: "Failed to fetch rooms" });
+  }
+});
+
+app.get("/api/rooms/:roomId/users", async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const room = await dbGet("SELECT id, type FROM chatrooms WHERE id = $1", [roomId]);
+
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+    if (room.type !== "group") {
+      return res.status(400).json({ error: "Only group rooms have member lists" });
+    }
+
+    const users = await dbAll(
+      `SELECT u.id, u.name
+       FROM room_members rm
+       JOIN users u ON u.id = rm.user_id
+       WHERE rm.room_id = $1
+       ORDER BY u.name ASC`,
+      [roomId]
+    );
+
+    res.json(users);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch room users" });
+  }
+});
+
+app.post("/api/rooms/remove/:UserID", async (req, res) => {
+  try {
+    const targetUserId = Number(req.params.UserID);
+    const { roomId } = req.body;
+
+    if (!targetUserId || !roomId) {
+      return res.status(400).json({ error: "roomId and UserID are required" });
+    }
+
+    const room = await dbGet("SELECT id, type FROM chatrooms WHERE id = $1", [roomId]);
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+    if (room.type !== "group") {
+      return res.status(400).json({ error: "Users can only be removed from group rooms" });
+    }
+
+    const membership = await dbGet(
+      "SELECT 1 AS ok FROM room_members WHERE room_id = $1 AND user_id = $2",
+      [roomId, targetUserId]
+    );
+
+    if (!membership) {
+      return res.status(404).json({ error: "User is not in this room" });
+    }
+
+    await dbRun("DELETE FROM room_members WHERE room_id = $1 AND user_id = $2", [
+      roomId,
+      targetUserId,
+    ]);
+
+    res.json({ success: true, roomId: Number(roomId), removedUserId: targetUserId });
+  } catch {
+    res.status(500).json({ error: "Failed to remove user from room" });
   }
 });
 
