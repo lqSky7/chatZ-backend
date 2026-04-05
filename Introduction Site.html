@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHATZ — Connect. Chat. Collaborate.</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #111010;
+    --bg2: #1a1918;
+    --bg3: #222120;
+    --peach: #e8b89a;
+    --peach-light: #f0cdb5;
+    --peach-dim: rgba(232,184,154,0.15);
+    --text: #f0ebe6;
+    --muted: #9a918a;
+    --border: rgba(232,184,154,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 48px;
+    background: rgba(17,16,16,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--peach);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .logo-icon svg { width: 20px; height: 20px; }
+
+  .logo-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  .nav-links {
+    display: flex; gap: 32px; list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--peach); }
+
+  .nav-cta {
+    background: var(--peach);
+    color: #111;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 99px;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .nav-cta:hover { background: var(--peach-light); transform: translateY(-1px); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(232,184,154,0.12) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--peach-dim);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--peach);
+    margin-bottom: 32px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: var(--peach);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(72px, 12vw, 140px);
+    line-height: 0.9;
+    letter-spacing: -1px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  h1 .accent { color: var(--peach); }
+
+  .tagline {
+    font-size: clamp(16px, 2vw, 20px);
+    color: var(--muted);
+    margin-top: 24px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 500;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .hero-desc {
+    max-width: 480px;
+    font-size: 17px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-top: 20px;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .hero-actions {
+    display: flex; gap: 14px; margin-top: 40px;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+
+  .btn-primary {
+    background: var(--peach);
+    color: #111;
+    border: none;
+    padding: 15px 36px;
+    border-radius: 99px;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 0 0 0 rgba(232,184,154,0.3);
+  }
+
+  .btn-primary:hover {
+    background: var(--peach-light);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(232,184,154,0.25);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 15px 36px;
+    border-radius: 99px;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s, transform 0.15s;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--peach);
+    color: var(--peach);
+    transform: translateY(-2px);
+  }
+
+  /* MOCKUP */
+  .mockup-wrap {
+    margin-top: 64px;
+    position: relative;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  .mockup-glow {
+    position: absolute; inset: -40px;
+    background: radial-gradient(ellipse, rgba(232,184,154,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .mockup {
+    width: min(520px, 90vw);
+    background: var(--bg2);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  }
+
+  .mockup-bar {
+    background: var(--bg3);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mockup-dots { display: flex; gap: 6px; }
+  .mockup-dots span {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .mockup-dots span:nth-child(1) { background: #ff5f57; }
+  .mockup-dots span:nth-child(2) { background: #febc2e; }
+  .mockup-dots span:nth-child(3) { background: #28c840; }
+
+  .mockup-url {
+    flex: 1;
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .mockup-body {
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .chat-msg {
+    display: flex; align-items: flex-end; gap: 8px;
+  }
+
+  .chat-msg.them { flex-direction: row; }
+  .chat-msg.me { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--peach);
+    flex-shrink: 0;
+  }
+
+  .bubble {
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 260px;
+  }
+
+  .them .bubble {
+    background: var(--bg3);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+
+  .me .bubble {
+    background: var(--peach);
+    color: #111;
+    border-bottom-right-radius: 4px;
+    font-weight: 500;
+  }
+
+  .chat-time { font-size: 10px; color: var(--muted); padding: 0 4px; }
+
+  .mockup-input {
+    margin: 0 24px 20px;
+    background: var(--bg3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .mockup-input span { flex: 1; font-size: 13px; color: var(--muted); }
+
+  .send-btn {
+    width: 28px; height: 28px;
+    background: var(--peach);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* STATS */
+  .stats {
+    display: flex; justify-content: center; gap: 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 80px 0;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .stat {
+    flex: 1; max-width: 220px;
+    padding: 40px 24px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 52px;
+    color: var(--peach);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  /* FEATURES */
+  section { padding: 80px 48px; max-width: 1100px; margin: 0 auto; }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--peach);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(40px, 5vw, 64px);
+    line-height: 1;
+    margin-bottom: 48px;
+  }
+
+  .features-grid {
+    display: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .feature-card {
+    background: var(--bg2);
+    padding: 36px 30px;
+    transition: background 0.2s;
+  }
+
+  .feature-card:hover { background: var(--bg3); }
+
+  .feat-icon {
+    width: 44px; height: 44px;
+    background: var(--peach-dim);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+    font-size: 20px;
+  }
+
+  .feat-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .feat-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* HOW IT WORKS */
+  .how-section { padding: 80px 48px; max-width: 1100px; margin: 0 auto; }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    margin-top: 48px;
+  }
+
+  .step { position: relative; }
+
+  .step-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 80px;
+    color: var(--peach-dim);
+    line-height: 1;
+    margin-bottom: -10px;
+  }
+
+  .step-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  .step-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+  /* CTA SECTION */
+  .cta-section {
+    max-width: 1100px;
+    margin: 0 auto 80px;
+    padding: 0 48px;
+  }
+
+  .cta-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 80px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-box::before {
+    content: '';
+    position: absolute;
+    top: -100px; left: 50%; transform: translateX(-50%);
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(232,184,154,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta-box h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(40px, 6vw, 72px);
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  .cta-box p {
+    color: var(--muted);
+    font-size: 17px;
+    margin-bottom: 36px;
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .footer-copy { font-size: 13px; color: var(--muted); }
+
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--peach); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── LEARN / HELP / DEV-BY SECTIONS ── */
+  .info-section {
+    max-width: 1100px;
+    margin: 0 auto 0;
+    padding: 80px 48px;
+    scroll-margin-top: 80px;
+  }
+
+  /* Tabs (Learn / Help) */
+  .info-tabs {
+    display: flex; gap: 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 36px;
+  }
+  .info-tab-btn {
+    padding: 10px 24px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--muted);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .info-tab-btn.active { color: var(--peach); border-bottom-color: var(--peach); }
+  .info-tab-btn:hover:not(.active) { color: var(--text); }
+  .info-tab-panel { display: none; }
+  .info-tab-panel.active { display: block; }
+
+  /* Accordion cards */
+  .acc-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .acc-header {
+    padding: 18px 24px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+  }
+  .acc-header:hover { background: var(--bg3); }
+  .acc-header .acc-icon { font-size: 20px; }
+  .acc-header .acc-chev { margin-left: auto; color: var(--muted); font-size: 13px; transition: transform 0.2s; }
+  .acc-header.open .acc-chev { transform: rotate(180deg); }
+  .acc-body { padding: 0 24px; max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.2s; }
+  .acc-body.open { max-height: 2400px; padding: 4px 24px 24px; }
+
+  /* Typography inside accordions */
+  .acc-body h3 { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--peach); font-weight: 600; margin: 20px 0 8px; }
+  .acc-body h3:first-child { margin-top: 0; }
+  .acc-body p { font-size: 14px; color: var(--muted); line-height: 1.75; margin-bottom: 12px; }
+  .acc-body ul, .acc-body ol { padding-left: 20px; margin-bottom: 12px; }
+  .acc-body li { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 4px; }
+
+  /* Code block */
+  .code-block {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 12.5px;
+    line-height: 1.65;
+    overflow-x: auto;
+    margin: 12px 0;
+    color: var(--text);
+  }
+  .code-block .comment { color: var(--muted); }
+  .code-block .kw { color: var(--peach); font-weight: 600; }
+  .code-block .st { color: #a8d8a8; }
+
+  /* Inline code */
+  .acc-body code {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px;
+    color: var(--peach);
+  }
+
+  /* Tip / warn boxes */
+  .tip-box {
+    background: rgba(100,200,150,0.08);
+    border-left: 3px solid #5dcaa5;
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 13.5px;
+    margin: 14px 0;
+    color: var(--text);
+  }
+  .tip-box strong { color: #5dcaa5; }
+  .warn-box {
+    background: rgba(232,184,154,0.08);
+    border-left: 3px solid var(--peach);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 13.5px;
+    margin: 14px 0;
+  }
+  .warn-box strong { color: var(--peach); }
+
+  /* Step list */
+  .learn-steps { display: flex; flex-direction: column; gap: 20px; }
+  .learn-step { display: flex; gap: 16px; }
+  .learn-step-num {
+    width: 28px; height: 28px; min-width: 28px;
+    border-radius: 50%;
+    background: var(--peach-dim);
+    color: var(--peach);
+    font-weight: 700; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .learn-step-body h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+  .learn-step-body p { margin: 0; font-size: 13.5px; }
+
+  /* Arch diagram — visual */
+  .arch-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    margin: 8px 0 4px;
+  }
+  .arch-layer {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    position: relative;
+  }
+  .arch-layer-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: var(--peach);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .arch-layer-title span { font-size: 16px; }
+  .arch-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .arch-tag {
+    background: rgba(232,184,154,0.08);
+    border: 1px solid rgba(232,184,154,0.18);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--text);
+    font-family: 'Fira Code', monospace;
+    white-space: nowrap;
+  }
+  .arch-tag .arrow { color: var(--peach); margin: 0 3px; }
+  .arch-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 2px 0;
+  }
+  .arch-connector-line {
+    width: 2px;
+    height: 22px;
+    background: linear-gradient(to bottom, var(--peach), rgba(232,184,154,0.3));
+  }
+  .arch-connector-label {
+    font-size: 11px;
+    color: var(--peach);
+    font-family: 'Fira Code', monospace;
+    background: var(--bg);
+    padding: 2px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    margin: 3px 0;
+    white-space: nowrap;
+  }
+  .arch-connector-arrow {
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid rgba(232,184,154,0.5);
+  }
+
+  /* API table */
+  .api-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px; margin: 12px 0;
+  }
+  .api-table th {
+    text-align: left; padding: 8px 12px;
+    background: var(--bg3); color: var(--muted);
+    font-weight: 600; font-size: 11px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .api-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--muted); }
+  .api-table tr:last-child td { border-bottom: none; }
+  .api-table code { font-size: 12px; }
+  .method { font-weight: 700; font-size: 11px; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 4px; }
+  .method.get { background: rgba(93,202,165,0.12); color: #5dcaa5; }
+  .method.post { background: var(--peach-dim); color: var(--peach); }
+
+  /* Ref grid */
+  .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ref-card {
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; background: var(--bg3);
+  }
+  .ref-card .ref-label { font-size: 11px; font-weight: 700; color: var(--peach); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .ref-card .ref-val { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* Trouble grid */
+  .trouble-grid { display: grid; gap: 12px; }
+  .trouble-item {
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; background: var(--bg3);
+  }
+  .trouble-item .prob { font-weight: 600; font-size: 14px; margin-bottom: 6px; color: var(--text); }
+  .trouble-item .cause { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+  .trouble-item .fix { font-size: 13.5px; color: var(--muted); }
+
+  /* ── DEVELOPED BY ── */
+  .devby-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 48px;
+    scroll-margin-top: 80px;
+  }
+
+  .devby-intro {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 32px;
+    display: flex; gap: 24px; align-items: center;
+  }
+  .devby-intro-icon { font-size: 40px; flex-shrink: 0; }
+  .devby-intro h2 { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 32px; margin-bottom: 8px; }
+  .devby-intro p { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+  .team-table-wrap {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--bg2);
+  }
+  .team-table {
+    width: 100%; border-collapse: collapse; font-size: 13.5px;
+  }
+  .team-table thead tr {
+    background: var(--bg3);
+  }
+  .team-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--peach);
+    border-bottom: 1px solid var(--border);
+  }
+  .team-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .team-table tbody tr:last-child td { border-bottom: none; }
+  .team-table tbody tr:hover td { background: rgba(232,184,154,0.04); }
+  .team-table .name { color: var(--text); font-weight: 600; }
+  .team-table .reg { font-family: 'Fira Code', monospace; font-size: 12px; color: var(--peach); }
+  .team-table .role-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .role-lead { background: var(--peach-dim); color: var(--peach); }
+  .role-frontend { background: rgba(93,202,165,0.12); color: #5dcaa5; }
+  .role-backend { background: rgba(130,100,200,0.15); color: #a78bfa; }
+  .role-database { background: rgba(100,160,230,0.12); color: #7eb8f5; }
+  .role-testing { background: rgba(230,180,80,0.12); color: #f6c94e; }
+  .role-site { background: rgba(230,100,130,0.12); color: #f47da0; }
+  .role-design { background: rgba(200,120,200,0.12); color: #d47cd4; }
+  .role-research { background: rgba(80,200,200,0.12); color: #60c8c8; }
+  .role-report { background: rgba(160,160,160,0.12); color: #aaa; }
+
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .nav-links { display: none; }
+    section, .how-section, .cta-section { padding: 60px 20px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; gap: 32px; }
+    .stats { flex-wrap: wrap; }
+    .stat { min-width: 50%; border-right: none; border-bottom: 1px solid var(--border); }
+    footer { flex-direction: column; gap: 16px; text-align: center; }
+    .hero-actions { flex-direction: column; align-items: center; }
+    .cta-box { padding: 48px 24px; }
+    .info-section, .devby-section { padding: 60px 20px; }
+    .ref-grid { grid-template-columns: 1fr; }
+    .devby-intro { flex-direction: column; gap: 16px; }
+    .team-table th:nth-child(4), .team-table td:nth-child(4) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+    </div>
+    <span class="logo-text">CHATZ</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#learn">Learn</a></li>
+    <li><a href="#help">Help</a></li>
+    <li><a href="#devby">Developed By</a></li>
+  </ul>
+  <a href="https://chat-z-backend-seven.vercel.app/" class="nav-cta" target="_blank">Launch App →</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+
+  <div class="hero-badge">
+    <span class="badge-dot"></span>
+    Now live
+  </div>
+
+  <h1>CHAT<span class="accent">Z</span></h1>
+  <p class="tagline">Connect · Chat · Collaborate</p>
+  <p class="hero-desc">Real-time conversations, zero friction. Jump into rooms, message instantly, and collaborate with anyone — anywhere.</p>
+
+  <div class="hero-actions">
+    <a href="https://chat-z-backend-seven.vercel.app/" class="btn-primary" target="_blank">Get Started</a>
+  </div>
+
+  <!-- MOCKUP -->
+  <div class="mockup-wrap" id="demo">
+    <div class="mockup-glow"></div>
+    <div class="mockup">
+      <div class="mockup-bar">
+        <div class="mockup-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="mockup-url">chat-z-backend-seven.vercel.app</div>
+      </div>
+      <div class="mockup-body">
+        <div class="chat-msg them">
+          <div class="avatar">A</div>
+          <div>
+            <div class="bubble">Hey! Just joined the room 👋</div>
+            <div class="chat-time">1:20 PM</div>
+          </div>
+        </div>
+        <div class="chat-msg me">
+          <div class="avatar">Y</div>
+          <div>
+            <div class="bubble">Welcome! Let's get started 🚀</div>
+            <div class="chat-time">1:21 PM</div>
+          </div>
+        </div>
+        <div class="chat-msg them">
+          <div class="avatar">B</div>
+          <div>
+            <div class="bubble">This is so fast — love the UI!</div>
+            <div class="chat-time">1:22 PM</div>
+          </div>
+        </div>
+        <div class="chat-msg me">
+          <div class="avatar">Y</div>
+          <div>
+            <div class="bubble">Built with real-time websockets ⚡</div>
+            <div class="chat-time">1:22 PM</div>
+          </div>
+        </div>
+      </div>
+      <div class="mockup-input">
+        <span>Type a message...</span>
+        <div class="send-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#111" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats reveal">
+  <div class="stat">
+    <div class="stat-num">⚡</div>
+    <div class="stat-label">Real-time delivery</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">0ms</div>
+    <div class="stat-label">Setup time</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">∞</div>
+    <div class="stat-label">Conversations</div>
+  </div>
+  
+</div>
+
+<!-- FEATURES -->
+<section id="features" class="reveal">
+  <div class="section-label">What you get</div>
+  <div class="section-title">Everything you need<br>to chat.</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Real-Time Messaging</div>
+      <div class="feat-desc">Messages appear instantly with no page refresh. Powered by WebSockets for lightning-fast delivery.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">🔐</div>
+      <div class="feat-title">Secure Auth</div>
+      <div class="feat-desc">Register and log in with confidence. Your account and conversations are protected.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">📱</div>
+      <div class="feat-title">Responsive</div>
+      <div class="feat-desc">Works seamlessly on desktop, tablet, and mobile. Chat from anywhere, on any device.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">🚀</div>
+      <div class="feat-title">Always Fast</div>
+      <div class="feat-desc">Deployed on Vercel's global edge network, so every user gets a snappy experience.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<div class="how-section" id="how">
+  <div class="reveal">
+    <div class="section-label">Simple by design</div>
+    <div class="section-title">Up and chatting<br>in seconds.</div>
+  </div>
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num">01</div>
+      <div class="step-title">Create an account</div>
+      <div class="step-desc">Register with a username and password.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">02</div>
+      <div class="step-title">Join a room</div>
+      <div class="step-desc">Jump into existing conversations or start your own. Invite friends with a single link.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">03</div>
+      <div class="step-title">Start chatting</div>
+      <div class="step-desc">Send messages, see replies in real-time, and collaborate — no setup, no friction.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-box reveal">
+    <h2>Ready to<br><span style="color:var(--peach)">connect?</span></h2>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <a href="https://chat-z-backend-seven.vercel.app/" class="btn-primary" target="_blank">Launch CHATZ →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ LEARN & HELP ═══════════════════ -->
+<div class="info-section reveal" id="learn">
+  <div class="section-label">Documentation</div>
+  <div class="section-title">Learn &amp; Help</div>
+
+  <div class="info-tabs">
+    <button class="info-tab-btn active" id="itb-learn" onclick="infoTab('learn')">📚 Learn</button>
+    <button class="info-tab-btn" id="itb-help" onclick="infoTab('help')">❓ Help</button>
+  </div>
+
+  <!-- ── LEARN PANEL ── -->
+  <div class="info-tab-panel active" id="itp-learn">
+
+    <!-- Architecture -->
+    <div class="acc-card">
+      <div class="acc-header open" onclick="acc(this)">
+        <span class="acc-icon">🏗️</span> Architecture Overview <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body open">
+        <div class="arch-visual">
+
+          <!-- Browser Layer -->
+          <div class="arch-layer">
+            <div class="arch-layer-title"><span>🌐</span> Browser Client</div>
+            <div class="arch-tags">
+              <div class="arch-tag">Vite + Vanilla JS</div>
+              <div class="arch-tag">src/services/api.js <span class="arrow">→</span> REST calls</div>
+              <div class="arch-tag">src/services/websocket.js <span class="arrow">→</span> WS messages</div>
+              <div class="arch-tag">src/pages/auth.js <span class="arrow">→</span> Login / Register</div>
+              <div class="arch-tag">src/pages/chat.js <span class="arrow">→</span> Main chat UI</div>
+              <div class="arch-tag">src/components/ <span class="arrow">→</span> Sidebar, Messages…</div>
+            </div>
+          </div>
+
+          <!-- Connector -->
+          <div class="arch-connector">
+            <div class="arch-connector-line"></div>
+            <div class="arch-connector-label">HTTP + WebSocket (ws://)</div>
+            <div class="arch-connector-line" style="background:linear-gradient(to bottom,rgba(232,184,154,0.3),var(--peach));"></div>
+            <div class="arch-connector-arrow"></div>
+          </div>
+
+          <!-- Backend Layer -->
+          <div class="arch-layer">
+            <div class="arch-layer-title"><span>⚙️</span> Backend</div>
+            <div class="arch-tags">
+              <div class="arch-tag">Node.js + Express</div>
+              <div class="arch-tag">backend/index.js</div>
+              <div class="arch-tag">WebSocket Server (ws) <span class="arrow">→</span> real-time events</div>
+              <div class="arch-tag">bcrypt <span class="arrow">→</span> password hashing</div>
+              <div class="arch-tag">CORS <span class="arrow">→</span> cross-origin support</div>
+            </div>
+          </div>
+
+          <!-- Connector -->
+          <div class="arch-connector">
+            <div class="arch-connector-line"></div>
+            <div class="arch-connector-label">pg (node-postgres)</div>
+            <div class="arch-connector-line" style="background:linear-gradient(to bottom,rgba(232,184,154,0.3),var(--peach));"></div>
+            <div class="arch-connector-arrow"></div>
+          </div>
+
+          <!-- Database Layer -->
+          <div class="arch-layer">
+            <div class="arch-layer-title"><span>🗄️</span> PostgreSQL</div>
+            <div class="arch-tags">
+              <div class="arch-tag">users</div>
+              <div class="arch-tag">chatrooms</div>
+              <div class="arch-tag">room_members</div>
+              <div class="arch-tag">messages</div>
+              <div class="arch-tag">room_join_requests</div>
+            </div>
+          </div>
+
+        </div>
+        <p>The client communicates via two channels simultaneously: <strong>REST API</strong> for stateful operations and a <strong>persistent WebSocket</strong> for real-time push events.</p>
+      </div>
+    </div>
+
+    <!-- Database Schema -->
+    <div class="acc-card">
+      <div class="acc-header" onclick="acc(this)">
+        <span class="acc-icon">🗄️</span> Database Schema <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <h3>Tables</h3>
+        <table class="api-table">
+          <thead><tr><th>Table</th><th>Key Columns</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>users</code></td><td>id, name, pass_hash, created_at</td><td>Stores all registered accounts</td></tr>
+            <tr><td><code>chatrooms</code></td><td>id, code, pass_hash, type, creator_id</td><td>Both group rooms and DM channels</td></tr>
+            <tr><td><code>room_members</code></td><td>room_id, user_id (composite PK)</td><td>Tracks who belongs to which room</td></tr>
+            <tr><td><code>messages</code></td><td>id, room_id, user_id, content, created_at</td><td>All chat messages</td></tr>
+            <tr><td><code>room_join_requests</code></td><td>id, room_id, user_id, status, reviewed_by</td><td>Pending/approved/rejected join requests</td></tr>
+          </tbody>
+        </table>
+        <div class="tip-box"><strong>Tip:</strong> <code>chatrooms.type</code> can be <code>'group'</code> or <code>'dm'</code>. DM rooms skip the code/password and join-request flow entirely.</div>
+      </div>
+    </div>
+
+    <!-- REST API Reference -->
+    <div class="acc-card">
+      <div class="acc-header" onclick="acc(this)">
+        <span class="acc-icon">🔌</span> REST API Reference <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <h3>Auth</h3>
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Body</th><th>Returns</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/register</code></td><td>name, password</td><td>{ id, name }</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/login</code></td><td>name, password</td><td>{ id, name }</td></tr>
+          </tbody>
+        </table>
+        <h3>Group Rooms</h3>
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/rooms/join</code></td><td>Creates room if code is new; sends join request otherwise</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/users/:userId/rooms</code></td><td>Lists all group rooms the user belongs to</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/rooms/:roomId/users</code></td><td>Lists members of a group room</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/rooms/remove/:userId</code></td><td>Removes a user from a group room</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/rooms/:roomId/requests?userId=</code></td><td>Returns pending join requests (creator only)</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/rooms/requests/:requestId/review</code></td><td>Approve or reject a join request</td></tr>
+          </tbody>
+        </table>
+        <h3>Direct Messages</h3>
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/dms</code></td><td>Creates or finds existing DM room between two users</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/users/:userId/dms</code></td><td>Lists all DMs with partner details</td></tr>
+          </tbody>
+        </table>
+        <h3>Messages &amp; Profiles</h3>
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Endpoint</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/rooms/:roomId/messages</code></td><td>Saves message and broadcasts to WS subscribers</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/users/:userId/profile</code></td><td>id, name, created_at</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/users/:userId/stats</code></td><td>total_messages, groups_joined, active_dms</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- WebSocket Protocol -->
+    <div class="acc-card">
+      <div class="acc-header" onclick="acc(this)">
+        <span class="acc-icon">⚡</span> WebSocket Protocol <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <p>The WebSocket URL is derived from <code>VITE_API_URL</code> by stripping <code>/api</code> and replacing the scheme: <code>http://</code> → <code>ws://</code>, <code>https://</code> → <code>wss://</code>.</p>
+        <h3>Client → Server actions</h3>
+        <table class="api-table">
+          <thead><tr><th>action</th><th>Payload</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td><code>identify</code></td><td>{ userId }</td><td>Links this WS connection to a user ID for targeted push</td></tr>
+            <tr><td><code>join</code></td><td>{ roomId }</td><td>Subscribes to a room; server immediately sends full history</td></tr>
+          </tbody>
+        </table>
+        <h3>Server → Client events</h3>
+        <table class="api-table">
+          <thead><tr><th>action</th><th>Payload</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><code>history</code></td><td>{ messages[] }</td><td>Immediately after <code>join</code></td></tr>
+            <tr><td><code>newMessage</code></td><td>{ message }</td><td>When any member sends a message to the room</td></tr>
+            <tr><td><code>identified</code></td><td>{ userId }</td><td>Confirmation after <code>identify</code></td></tr>
+            <tr><td><code>joinRequestSubmitted</code></td><td>{ request }</td><td>Pushed to room creator when someone requests to join</td></tr>
+            <tr><td><code>joinRequestApproved</code></td><td>{ room }</td><td>Pushed to requester when creator approves</td></tr>
+            <tr><td><code>joinRequestRejected</code></td><td>{ room }</td><td>Pushed to requester when creator rejects</td></tr>
+          </tbody>
+        </table>
+        <div class="tip-box"><strong>Note:</strong> Room messages are broadcast to all WS clients subscribed via the <code>rooms</code> Map. Targeted notifications use the <code>userSockets</code> Map — this is why <code>identify</code> must be called at login.</div>
+      </div>
+    </div>
+
+    <!-- How It Was Built -->
+    <div class="acc-card">
+      <div class="acc-header" onclick="acc(this)">
+        <span class="acc-icon">🔨</span> How It Was Built <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <div class="learn-steps">
+          <div class="learn-step"><div class="learn-step-num">1</div><div class="learn-step-body"><h4>Requirements &amp; Protocol Design</h4><p>Identified need for group rooms with approval flows + private DMs. Defined two-channel architecture: REST for persistence, WebSocket for real-time delivery.</p></div></div>
+          <div class="learn-step"><div class="learn-step-num">2</div><div class="learn-step-body"><h4>Database Schema</h4><p>Created five normalized tables. Used <code>ON CONFLICT DO NOTHING</code> for idempotent inserts. <code>chatrooms.type</code> discriminator keeps groups and DMs in one table.</p></div></div>
+          <div class="learn-step"><div class="learn-step-num">3</div><div class="learn-step-body"><h4>Backend: Express + WebSocket</h4><p>Thin Express layer for REST. <code>ws</code> library WebSocket server shares the same HTTP server. Two in-memory Maps route broadcast vs targeted push events.</p></div></div>
+          <div class="learn-step"><div class="learn-step-num">4</div><div class="learn-step-body"><h4>Auth &amp; Room Join Flow</h4><p><code>bcrypt</code> hashes passwords. Group room join is a state machine: create-if-new → auto-approve creator → send pending request → creator approves/rejects → WS pushes result.</p></div></div>
+          <div class="learn-step"><div class="learn-step-num">5</div><div class="learn-step-body"><h4>Frontend Service Layer</h4><p><code>api.js</code> wraps every REST call with logging and error normalization. <code>websocket.js</code> implements a listener-registry pattern with automatic reconnect and pending join queue.</p></div></div>
+          <div class="learn-step"><div class="learn-step-num">6</div><div class="learn-step-body"><h4>Broadcast DM Utility</h4><p><code>sendBroadcast()</code> in <code>api.js</code> iterates over recipient IDs, finds or creates a DM room with each, then sends the message — partial failures tracked without stopping the loop.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Real-World Concepts -->
+    <div class="acc-card">
+      <div class="acc-header" onclick="acc(this)">
+        <span class="acc-icon">🌐</span> Real-World Concepts You're Using <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <div class="ref-grid">
+          <div class="ref-card"><div class="ref-label">WebSocket full-duplex</div><div class="ref-val">Used in Slack, Discord, WhatsApp Web for live messaging</div></div>
+          <div class="ref-card"><div class="ref-label">Publish / Subscribe</div><div class="ref-val">Same pattern as Redis Pub/Sub, Kafka consumers scoped by topic</div></div>
+          <div class="ref-card"><div class="ref-label">Approval workflow</div><div class="ref-val">Mirrors GitHub PR review, Slack workspace invite flows</div></div>
+          <div class="ref-card"><div class="ref-label">Fan-out broadcast</div><div class="ref-val">Used in push notification systems, online game state sync</div></div>
+          <div class="ref-card"><div class="ref-label">REST + WS hybrid</div><div class="ref-val">Same approach as Notion, Linear — REST for data, WS for presence</div></div>
+          <div class="ref-card"><div class="ref-label">bcrypt password hash</div><div class="ref-val">Industry standard — salted, slow hash prevents rainbow-table attacks</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /itp-learn -->
+
+  <!-- ── HELP PANEL ── -->
+  <div class="info-tab-panel" id="itp-help">
+
+    <!-- Getting Started -->
+    <div class="acc-card">
+      <div class="acc-header open" onclick="acc(this)">
+        <span class="acc-icon">🚀</span> Getting Started <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body open">
+        <div class="learn-steps">
+          <div class="learn-step"><div class="learn-step-num">1</div><div class="learn-step-body"><h4>Clone / unzip the project</h4><p>Place the project folder somewhere on your machine. It contains <code>backend/</code> (Node.js server) and <code>src/</code> (Vite frontend).</p></div></div>
+          <div class="learn-step"><div class="learn-step-num">2</div><div class="learn-step-body"><h4>Set up PostgreSQL</h4><p>Install PostgreSQL and create a database. Copy <code>.env.example</code> to <code>.env</code> and fill in <code>DATABASE_URL</code>.</p><div class="code-block"><span class="comment"># Example DATABASE_URL</span>
+DATABASE_URL=postgresql://myuser:mypassword@localhost:5432/chatz</div></div></div>
+          <div class="learn-step"><div class="learn-step-num">3</div><div class="learn-step-body"><h4>Install backend dependencies</h4><div class="code-block">cd backend
+npm install</div></div></div>
+          <div class="learn-step"><div class="learn-step-num">4</div><div class="learn-step-body"><h4>Start the backend server</h4><div class="code-block">npm start
+<span class="comment"># Server running on http://localhost:3000</span>
+<span class="comment"># Database initialized successfully</span></div><p>The server auto-creates all tables on first run. Leave this terminal open.</p></div></div>
+          <div class="learn-step"><div class="learn-step-num">5</div><div class="learn-step-body"><h4>Install and start the frontend</h4><div class="code-block">npm install
+npm run dev
+<span class="comment"># ➜ Local: http://localhost:5173</span></div></div></div>
+          <div class="learn-step"><div class="learn-step-num">6</div><div class="learn-step-body"><h4>Open the app</h4><p>Visit <code>http://localhost:5173</code> in your browser. You'll see the login/register screen.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Using the Chat Features -->
+    <div class="acc-card">
+      <div class="acc-header" onclick="acc(this)">
+        <span class="acc-icon">💬</span> Using the Chat Features <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <h3>Register and log in</h3>
+        <p>On first visit, click Register and create a username and password. Your session is stored in <code>localStorage</code> (userId + name).</p>
+        <h3>Join or create a group room</h3>
+        <p>Enter any room code and a password. If the code doesn't exist yet, you become the room creator and are joined immediately. If it exists:</p>
+        <ul>
+          <li>Enter the correct room password</li>
+          <li>A join request is sent to the creator</li>
+          <li>The creator sees a real-time notification and can approve or reject</li>
+          <li>You're notified instantly via WebSocket when reviewed</li>
+        </ul>
+        <h3>Start a Direct Message (DM)</h3>
+        <p>Use the DM section in the sidebar. Enter a target user's ID or username to open a private channel. ChatZ finds or creates the DM room automatically.</p>
+        <h3>Sending messages</h3>
+        <p>Type in the message input and press Enter. Messages are persisted to PostgreSQL and broadcast in real time. When you rejoin a room, full history is replayed.</p>
+        <h3>Managing room members (creators only)</h3>
+        <p>As a room creator you can view the member list and remove users via the room settings panel. Removal calls <code>DELETE FROM room_members</code> — the user loses access immediately.</p>
+      </div>
+    </div>
+
+    <!-- Environment Variables -->
+    <div class="acc-card">
+      <div class="acc-header" onclick="acc(this)">
+        <span class="acc-icon">⚙️</span> Environment Variables <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <table class="api-table">
+          <thead><tr><th>Variable</th><th>File</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>DATABASE_URL</code></td><td>.env (root)</td><td>—</td><td>PostgreSQL connection string</td></tr>
+            <tr><td><code>DATABASE_URL</code></td><td>backend/.env</td><td>—</td><td>Same string, read by backend/db.js</td></tr>
+            <tr><td><code>PORT</code></td><td>backend/.env</td><td>3000</td><td>Port the Express server listens on</td></tr>
+            <tr><td><code>NODE_ENV</code></td><td>backend/.env</td><td>development</td><td>Set to <code>production</code> to enable SSL for Postgres</td></tr>
+            <tr><td><code>VITE_API_URL</code></td><td>.env (root)</td><td>http://localhost:3000/api</td><td>Base URL for all API calls from the frontend</td></tr>
+          </tbody>
+        </table>
+        <div class="warn-box"><strong>Warning:</strong> Never commit <code>.env</code> files with real credentials. The <code>.gitignore</code> already excludes them — double-check before pushing to a public repo.</div>
+      </div>
+    </div>
+
+    <!-- Troubleshooting -->
+    <div class="acc-card">
+      <div class="acc-header" onclick="acc(this)">
+        <span class="acc-icon">🛠️</span> Troubleshooting <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <div class="trouble-grid">
+          <div class="trouble-item"><div class="prob">❌ "password authentication failed for user"</div><div class="cause">Cause: Wrong credentials in DATABASE_URL</div><div class="fix">Check your <code>backend/.env</code> — username, password, host, and database name must all match your PostgreSQL setup.</div></div>
+          <div class="trouble-item"><div class="prob">❌ "Connection refused" on port 5432</div><div class="cause">Cause: PostgreSQL is not running</div><div class="fix">Start PostgreSQL: <code>sudo service postgresql start</code> (Linux) or open the Postgres app (Mac).</div></div>
+          <div class="trouble-item"><div class="prob">❌ WebSocket connects then immediately disconnects</div><div class="cause">Cause: VITE_API_URL points to wrong host or port</div><div class="fix">Make sure <code>VITE_API_URL=http://localhost:3000/api</code> in your root <code>.env</code> and the backend is running on port 3000.</div></div>
+          <div class="trouble-item"><div class="prob">❌ "User already exists" on register</div><div class="cause">Cause: The username is taken (UNIQUE constraint on users.name)</div><div class="fix">Try a different username, or log in instead if the account is yours.</div></div>
+          <div class="trouble-item"><div class="prob">❌ Join request never arrives at creator</div><div class="cause">Cause: Creator's browser has not sent the <code>identify</code> WS action</div><div class="fix">The creator must be logged in and have the app open. The <code>identify</code> action is sent on WS connect — ensure the creator refreshed after logging in.</div></div>
+          <div class="trouble-item"><div class="prob">❌ Messages not appearing in real time</div><div class="cause">Cause: WS not subscribed to the room or connection dropped</div><div class="fix">Reload the page to reconnect. Check the browser console for <code>[WS] Disconnected</code> logs. If behind a proxy, ensure it supports WebSocket upgrades.</div></div>
+          <div class="trouble-item"><div class="prob">❌ Frontend shows blank page / Vite error</div><div class="cause">Cause: Missing npm install or node_modules</div><div class="fix">Run <code>npm install</code> in the project root (not inside <code>backend/</code>), then <code>npm run dev</code>.</div></div>
+          <div class="trouble-item"><div class="prob">❌ "EADDRINUSE" error when starting backend</div><div class="cause">Cause: Port 3000 already in use</div><div class="fix">Kill the old process: <code>lsof -ti:3000 | xargs kill</code>, or set <code>PORT=3001</code> in <code>backend/.env</code> and update <code>VITE_API_URL</code> accordingly.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Reference -->
+    <div class="acc-card">
+      <div class="acc-header" onclick="acc(this)">
+        <span class="acc-icon">📋</span> Quick Reference <span class="acc-chev">▾</span>
+      </div>
+      <div class="acc-body">
+        <h3>npm scripts</h3>
+        <table class="api-table">
+          <thead><tr><th>Command</th><th>Directory</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>npm start</code></td><td>backend/</td><td>Starts Express + WebSocket server</td></tr>
+            <tr><td><code>npm run dev</code></td><td>root</td><td>Starts Vite dev server with HMR</td></tr>
+            <tr><td><code>npm run build</code></td><td>root</td><td>Builds frontend to dist/</td></tr>
+            <tr><td><code>npm run preview</code></td><td>root</td><td>Serves the production build locally</td></tr>
+          </tbody>
+        </table>
+        <h3>Key files</h3>
+        <table class="api-table">
+          <thead><tr><th>File</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><code>backend/index.js</code></td><td>All Express routes + WebSocket server</td></tr>
+            <tr><td><code>backend/db.js</code></td><td>PostgreSQL pool, table init, query helpers</td></tr>
+            <tr><td><code>src/services/api.js</code></td><td>All REST calls + broadcast utility</td></tr>
+            <tr><td><code>src/services/websocket.js</code></td><td>WS connection, listener registry, reconnect logic</td></tr>
+            <tr><td><code>src/services/state.js</code></td><td>Client-side in-memory state (current user, active room)</td></tr>
+            <tr><td><code>src/pages/auth.js</code></td><td>Login / register UI and flow</td></tr>
+            <tr><td><code>src/pages/chat.js</code></td><td>Main chat view, room switching, message rendering</td></tr>
+          </tbody>
+        </table>
+        <div class="tip-box"><strong>Tip:</strong> Open your browser's DevTools console while running — <code>api.js</code> logs every request and response with timestamps, and <code>websocket.js</code> logs all WS events.</div>
+      </div>
+    </div>
+
+  </div><!-- /itp-help -->
+</div><!-- /info-section -->
+
+<!-- ═══════════════════ DEVELOPED BY ═══════════════════ -->
+<div class="devby-section reveal" id="devby">
+  <div class="section-label">The Team</div>
+  <div class="section-title">Developed By</div>
+
+  <!-- Guided By -->
+  <div style="
+      margin-top:10px;
+      margin-bottom:35px;
+      padding:14px 20px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:var(--bg2);
+      font-size:18px;
+      color:var(--text);
+      width:fit-content;">
+      <strong style="color:var(--peach);">Guided By:</strong>
+      Dr. Swaminathan Annadurai
+  </div>
+
+  <div class="devby-intro">
+    <div class="devby-intro-icon">👨‍💻</div>
+    <div>
+      <h2>Meet the ChatZ Team</h2>
+      <p>ChatZ was built as a full-stack Computer Networks / Full-Stack project by a team of 25 members spanning frontend, backend, database, testing, design, research, and documentation roles.</p>
+    </div>
+  </div>
+
+  <div class="team-table-wrap">
+    <table class="team-table">
+      <thead>
+        <tr>
+          <th>S.No.</th>
+          <th>Name</th>
+          <th>Reg No.</th>
+          <th>Designation</th>
+          <th>Work Done</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td class="name">Shivanshu Singh</td><td class="reg">24BYB1175</td><td><span class="role-badge role-lead">Team Lead</span></td><td>Maintained efficient collaboration between departments, ensuring smooth communication and coordinated teamwork to achieve project objectives.</td></tr>
+        <tr><td>2</td><td class="name">Ayush Singh</td><td class="reg">24BYB1147</td><td><span class="role-badge role-lead">Frontend Lead</span></td><td>Built the frontend structure and created a simple login page.</td></tr>
+        <tr><td>3</td><td class="name">Atharv Verma</td><td class="reg">24BCE1985</td><td><span class="role-badge role-frontend">Frontend</span></td><td>Added loading states to prevent multiple submissions/improve responsiveness and implemented animated error feedback.</td></tr>
+        <tr><td>4</td><td class="name">Vrushabh Usapkar</td><td class="reg">24BRS1231</td><td><span class="role-badge role-frontend">Frontend</span></td><td>Assisted in keeping the design simple and easy to use, and making it look like a real chat app so users feel familiar while using it.</td></tr>
+        <tr><td>5</td><td class="name">Arpit Shah</td><td class="reg">24BYB1149</td><td><span class="role-badge role-frontend">Frontend</span></td><td>Created reusable components like chat boxes, buttons, and message cards to keep the code clean.</td></tr>
+        <tr><td>6</td><td class="name">Abhijeet</td><td class="reg">24BYB1129</td><td><span class="role-badge role-frontend">Frontend</span></td><td>Maintained consistent colors, fonts, and spacing across the app for a better user experience.</td></tr>
+        <tr><td>7</td><td class="name">Diljot</td><td class="reg">24BYB1095</td><td><span class="role-badge role-lead">Backend Lead</span></td><td>Initial DB schema design and implementation.</td></tr>
+        <tr><td>8</td><td class="name">ERWIN</td><td class="reg">24BYB1131</td><td><span class="role-badge role-backend">Backend</span></td><td>Worked on Backend Implementation.</td></tr>
+        <tr><td>9</td><td class="name">Swastik Shukla</td><td class="reg">24BYB1006</td><td><span class="role-badge role-backend">Backend</span></td><td>Worked on APIs.</td></tr>
+        <tr><td>10</td><td class="name">Priyanshu Nehra</td><td class="reg">24BPS1081</td><td><span class="role-badge role-database">Database</span></td><td>Optimized database queries, improved data handling efficiency, and ensured reliable data storage with error handling.</td></tr>
+        <tr><td>11</td><td class="name">K Nirmal Sesha Sai</td><td class="reg">24BYB1083</td><td><span class="role-badge role-database">Database</span></td><td>Handled data organization, improved data retrieval efficiency, and ensured secure and consistent database operations.</td></tr>
+        <tr><td>12</td><td class="name">Lokesh Reddy</td><td class="reg">24BYB1045</td><td><span class="role-badge role-database">Database</span></td><td>Monitored and maintained database performance while ensuring secure and consistent data operations.</td></tr>
+        <tr><td>13</td><td class="name">Sai Chaitanya reddy</td><td class="reg">24BYB1169</td><td><span class="role-badge role-database">Database</span></td><td>Handled Data Storage.</td></tr>
+        <tr><td>14</td><td class="name">Priyansh</td><td class="reg">24BYB1107</td><td><span class="role-badge role-testing">Testing</span></td><td>Performed API-UI integration validation ensuring synchronization between backend responses and frontend rendering.</td></tr>
+        <tr><td>15</td><td class="name">Ankit Kumar Singh</td><td class="reg">24BYB1140</td><td><span class="role-badge role-testing">Testing</span></td><td>Worked on end-to-end testing of user flows including authentication, chat functionality, and logout.</td></tr>
+        <tr><td>16</td><td class="name">Aniket Singh</td><td class="reg">24BYB1133</td><td><span class="role-badge role-testing">Testing</span></td><td>Contribution worked on UI/UX testing and cross-browser compatibility.</td></tr>
+        <tr><td>17</td><td class="name">Alvin Binoy</td><td class="reg">24BYB1163</td><td><span class="role-badge role-site">Introduction Site</span></td><td>Designed and developed the project's landing page, showcasing application features and focusing on user engagement and seamless navigation across sections.</td></tr>
+        <tr><td>18</td><td class="name">Alvin Ashish</td><td class="reg">24BYB1165</td><td><span class="role-badge role-site">Introduction Site</span></td><td>Designed and developed the project's landing page, showcasing application features and focusing on user engagement and seamless navigation across sections.</td></tr>
+        <tr><td>19</td><td class="name">Harish</td><td class="reg">24BYB1159</td><td><span class="role-badge role-site">Introduction Site</span></td><td>Designed and developed the project's landing page, showcasing application features and focusing on user engagement and seamless navigation across sections.</td></tr>
+        <tr><td>20</td><td class="name">Harleen</td><td class="reg">24BYB1087</td><td><span class="role-badge role-design">Figma Design</span></td><td>helped with the UI design in Figma and in implementing layout of the frontend.</td></tr>
+        <tr><td>21</td><td class="name">Navya Sharma</td><td class="reg">24BYB1011</td><td><span class="role-badge role-design">Figma Design</span></td><td>Worked on the front end design.</td></tr>
+        <tr><td>22</td><td class="name">Ivan</td><td class="reg">24BYB1097</td><td><span class="role-badge role-design">Figma Design</span></td><td>Helped the designing and implementation of the frontend UI/UX.</td></tr>
+        <tr><td>23</td><td class="name">Rakshit</td><td class="reg">24BYB1117</td><td><span class="role-badge role-research">Research</span></td><td>Researched real-time messaging architectures, single and group chat workflows, and best practices for chat application design.</td></tr>
+        <tr><td>24</td><td class="name">Jivitesh Sharma</td><td class="reg">24BYB1071</td><td><span class="role-badge role-report">Report</span></td><td>Worked on project documentation.</td></tr>
+        <tr><td>25</td><td class="name">Vivaan Tripathi</td><td class="reg">24BYB1049</td><td><span class="role-badge role-report">Report</span></td><td>Worked on project documentation.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="nav-logo">
+    <div class="logo-icon" style="width:28px;height:28px;border-radius:7px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+    </div>
+    <span class="logo-text" style="font-size:16px;">CHATZ</span>
+  </div>
+  <div class="footer-links">
+    <a href="https://chat-z-backend-seven.vercel.app/" target="_blank">Launch App</a>
+    <a href="#learn">Learn</a>
+    <a href="#help" onclick="document.querySelector('#learn').scrollIntoView({behavior:'smooth'});setTimeout(()=>infoTab('help'),400);return false;">Help</a>
+    <a href="#devby">Developed By</a>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(r => observer.observe(r));
+
+  // Stagger steps
+  document.querySelectorAll('.step.reveal').forEach((el, i) => {
+    el.style.transitionDelay = `${i * 0.12}s`;
+  });
+
+  // Info tab switcher (Learn / Help)
+  function infoTab(name) {
+    document.querySelectorAll('.info-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.info-tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('itb-' + name).classList.add('active');
+    document.getElementById('itp-' + name).classList.add('active');
+  }
+
+  // Accordion toggle
+  function acc(header) {
+    header.classList.toggle('open');
+    const body = header.nextElementSibling;
+    body.classList.toggle('open');
+  }
+
+  // Wire up nav Help link to scroll + switch tab
+  document.querySelectorAll('a[href="#help"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.getElementById('learn').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => infoTab('help'), 500);
+    });
+  });
+</script>
+</body>
+</html>
